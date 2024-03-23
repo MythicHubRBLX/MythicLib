@@ -1,5 +1,3 @@
---Creditos: REDzLibV5
-
 local MarketplaceService = game:GetService("MarketplaceService")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
@@ -29,12 +27,12 @@ local MythicLib = {
 			["Color Dark Text"] = Color3.fromRGB(190, 190, 190)
 		},
 		White = {
-			["Color Hub 1"] = ColorSequence.new({ColorSequenceKeypoint.new(0.00, Color3.fromRGB(80, 80, 80)), ColorSequenceKeypoint.new(0.50, Color3.fromRGB(95, 95, 95)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(80, 80, 80))}),
-			["Color Hub 2"] = Color3.fromRGB(200, 200, 200),
-			["Color Stroke"] = Color3.fromRGB(240, 240, 240),
+			["Color Hub 1"] = ColorSequence.new({ColorSequenceKeypoint.new(0.00, Color3.fromRGB(215, 215, 215)), ColorSequenceKeypoint.new(0.50, Color3.fromRGB(208, 208, 208)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(215, 215, 215))}),
+			["Color Hub 2"] = Color3.fromRGB(210, 210, 210),
+			["Color Stroke"] = Color3.fromRGB(190, 190, 190),
 			["Color Theme"] = Color3.fromRGB(65, 150, 255),
-			["Color Text"] = Color3.fromRGB(5, 5, 5),
-			["Color Dark Text"] = Color3.fromRGB(25, 25, 25)
+			["Color Text"] = Color3.fromRGB(10, 10, 10),
+			["Color Dark Text"] = Color3.fromRGB(41, 41, 41)
 		},
 		Purple = {
 			["Color Hub 1"] = ColorSequence.new({ColorSequenceKeypoint.new(0.00, Color3.fromRGB(27.5, 25, 30)), ColorSequenceKeypoint.new(0.50, Color3.fromRGB(32.5, 32.5, 32.5)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(27.5, 25, 30))}),
