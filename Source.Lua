@@ -10,7 +10,7 @@ local PlayerMouse = Player:GetMouse()
 
 local MythicLib = {
 	Themes = {
-		Darker = {
+		["Escuro +"] = {
 			["Color Hub 1"] = ColorSequence.new({ColorSequenceKeypoint.new(0.00, Color3.fromRGB(25, 25, 25)), ColorSequenceKeypoint.new(0.50, Color3.fromRGB(32.5, 32.5, 32.5)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(25, 25, 25))}),
 			["Color Hub 2"] = Color3.fromRGB(30, 30, 30),
 			["Color Stroke"] = Color3.fromRGB(40, 40, 40),
@@ -18,7 +18,7 @@ local MythicLib = {
 			["Color Text"] = Color3.fromRGB(243, 243, 243),
 			["Color Dark Text"] = Color3.fromRGB(180, 180, 180)
 		},
-		Dark = {
+		Escuro = {
 			["Color Hub 1"] = ColorSequence.new({ColorSequenceKeypoint.new(0.00, Color3.fromRGB(40, 40, 40)), ColorSequenceKeypoint.new(0.50, Color3.fromRGB(47.5, 47.5, 47.5)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(40, 40, 40))}),
 			["Color Hub 2"] = Color3.fromRGB(45, 45, 45),
 			["Color Stroke"] = Color3.fromRGB(65, 65, 65),
@@ -26,7 +26,7 @@ local MythicLib = {
 			["Color Text"] = Color3.fromRGB(245, 245, 245),
 			["Color Dark Text"] = Color3.fromRGB(190, 190, 190)
 		},
-		White = {
+		Claro = {
 			["Color Hub 1"] = ColorSequence.new({ColorSequenceKeypoint.new(0.00, Color3.fromRGB(215, 215, 215)), ColorSequenceKeypoint.new(0.50, Color3.fromRGB(208, 208, 208)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(215, 215, 215))}),
 			["Color Hub 2"] = Color3.fromRGB(210, 210, 210),
 			["Color Stroke"] = Color3.fromRGB(190, 190, 190),
@@ -34,7 +34,7 @@ local MythicLib = {
 			["Color Text"] = Color3.fromRGB(10, 10, 10),
 			["Color Dark Text"] = Color3.fromRGB(41, 41, 41)
 		},
-		Purple = {
+		Roxo = {
 			["Color Hub 1"] = ColorSequence.new({ColorSequenceKeypoint.new(0.00, Color3.fromRGB(27.5, 25, 30)), ColorSequenceKeypoint.new(0.50, Color3.fromRGB(32.5, 32.5, 32.5)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(27.5, 25, 30))}),
 			["Color Hub 2"] = Color3.fromRGB(30, 30, 30),
 			["Color Stroke"] = Color3.fromRGB(40, 40, 40),
@@ -42,7 +42,7 @@ local MythicLib = {
 			["Color Text"] = Color3.fromRGB(240, 240, 240),
 			["Color Dark Text"] = Color3.fromRGB(180, 180, 180)
 		},
-		Red = {
+		Vermelho = {
 			["Color Hub 1"] = ColorSequence.new({ColorSequenceKeypoint.new(0.00, Color3.fromRGB(27.5, 25, 30)), ColorSequenceKeypoint.new(0.50, Color3.fromRGB(32.5, 32.5, 32.5)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(27.5, 25, 30))}),
 			["Color Hub 2"] = Color3.fromRGB(30, 30, 30),
 			["Color Stroke"] = Color3.fromRGB(40, 40, 40),
@@ -50,7 +50,7 @@ local MythicLib = {
 			["Color Text"] = Color3.fromRGB(240, 240, 240),
 			["Color Dark Text"] = Color3.fromRGB(180, 180, 180)
 		},
-		Yellow = {
+		Amarelo = {
 			["Color Hub 1"] = ColorSequence.new({ColorSequenceKeypoint.new(0.00, Color3.fromRGB(27.5, 25, 30)), ColorSequenceKeypoint.new(0.50, Color3.fromRGB(32.5, 32.5, 32.5)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(27.5, 25, 30))}),
 			["Color Hub 2"] = Color3.fromRGB(30, 30, 30),
 			["Color Stroke"] = Color3.fromRGB(40, 40, 40),
@@ -58,7 +58,7 @@ local MythicLib = {
 			["Color Text"] = Color3.fromRGB(240, 240, 240),
 			["Color Dark Text"] = Color3.fromRGB(180, 180, 180)
 		},
-		Green = {
+		Verde = {
 			["Color Hub 1"] = ColorSequence.new({ColorSequenceKeypoint.new(0.00, Color3.fromRGB(27.5, 25, 30)), ColorSequenceKeypoint.new(0.50, Color3.fromRGB(32.5, 32.5, 32.5)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(27.5, 25, 30))}),
 			["Color Hub 2"] = Color3.fromRGB(30, 30, 30),
 			["Color Stroke"] = Color3.fromRGB(40, 40, 40),
@@ -66,7 +66,7 @@ local MythicLib = {
 			["Color Text"] = Color3.fromRGB(240, 240, 240),
 			["Color Dark Text"] = Color3.fromRGB(180, 180, 180)
 		},
-		Pink = {
+		Rosa = {
 			["Color Hub 1"] = ColorSequence.new({ColorSequenceKeypoint.new(0.00, Color3.fromRGB(27.5, 25, 30)), ColorSequenceKeypoint.new(0.50, Color3.fromRGB(32.5, 32.5, 32.5)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(27.5, 25, 30))}),
 			["Color Hub 2"] = Color3.fromRGB(30, 30, 30),
 			["Color Stroke"] = Color3.fromRGB(40, 40, 40),
@@ -74,7 +74,7 @@ local MythicLib = {
 			["Color Text"] = Color3.fromRGB(240, 240, 240),
 			["Color Dark Text"] = Color3.fromRGB(180, 180, 180)
 		},
-		Blue = {
+		Azul = {
 			["Color Hub 1"] = ColorSequence.new({ColorSequenceKeypoint.new(0.00, Color3.fromRGB(27.5, 25, 30)), ColorSequenceKeypoint.new(0.50, Color3.fromRGB(32.5, 32.5, 32.5)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(27.5, 25, 30))}),
 			["Color Hub 2"] = Color3.fromRGB(30, 30, 30),
 			["Color Stroke"] = Color3.fromRGB(40, 40, 40),
