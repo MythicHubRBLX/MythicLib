@@ -90,7 +90,7 @@ local MythicLib = {
 	Save = {
 		UISize = {460, 340},
 		TabSize = 160,
-		Theme = "Darker"
+		Theme = "Escuro +"
 	},
 	Instances = {},
 	Elements = {},
