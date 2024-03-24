@@ -1592,17 +1592,16 @@ function MythicLib:MakeWindow(Configs)
 			local DDesc = Configs.Desc or Configs.Description or ""
 			local DOptions = Configs[2] or Configs.Options or {}
 			local DDefault = Configs[3] or Configs.Default or {}
-			local Callback = Configs[4] or Configs.Callback or function()
-			end
+			local Callback = Configs[4] or Configs.Callback or function() end
 			local Flag = Configs[5] or Configs.Flag or false
 			local MultCallback = {}
-
+		
 			if Flag and type(Flag) == "string" and assert(Flags, Flag) then
 				DDefault = Flags[Flag]
 			end
-
+		
 			local Button, LabelFunc = ButtonFrame(Container, DName, DDesc, UDim2.new(1, -180))
-
+		
 			local SelectedFrame = InsertTheme(Create("Frame", Button, {
 				Size = UDim2.new(0, 150, 0, 18),
 				Position = UDim2.new(1, -10, 0.5),
@@ -1610,7 +1609,7 @@ function MythicLib:MakeWindow(Configs)
 				BackgroundColor3 = Theme["Color Stroke"]
 			}), "Stroke")
 			Make("Corner", SelectedFrame, UDim.new(0, 4))
-
+		
 			local ActiveLabel = InsertTheme(Create("TextLabel", SelectedFrame, {
 				Size = UDim2.new(0.85, 0, 0.85, 0),
 				AnchorPoint = Vector2.new(0.5, 0.5),
@@ -1621,7 +1620,7 @@ function MythicLib:MakeWindow(Configs)
 				TextColor3 = Theme["Color Text"],
 				Text = "..."
 			}), "Text")
-
+		
 			local Arrow = Create("ImageLabel", SelectedFrame, {
 				Size = UDim2.new(0, 15, 0, 15),
 				Position = UDim2.new(0, -5, 0.5),
@@ -1629,7 +1628,7 @@ function MythicLib:MakeWindow(Configs)
 				Image = "rbxassetid://10709791523",
 				BackgroundTransparency = 1
 			})
-
+		
 			local NoClickFrame = Create("TextButton", DropdownHolder, {
 				Name = "AntiClick",
 				Size = UDim2.new(1, 0, 1, 0),
@@ -1637,7 +1636,7 @@ function MythicLib:MakeWindow(Configs)
 				Visible = false,
 				Text = ""
 			})
-
+		
 			local DropFrame = Create("Frame", NoClickFrame, {
 				Size = UDim2.new(SelectedFrame.Size.X, 0, 0),
 				BackgroundTransparency = 0.1,
@@ -1652,7 +1651,7 @@ function MythicLib:MakeWindow(Configs)
 			Make("Gradient", DropFrame, {
 				Rotation = 60
 			})
-
+		
 			local ScrollFrame = InsertTheme(Create("ScrollingFrame", DropFrame, {
 				ScrollBarImageColor3 = Theme["Color Theme"],
 				Size = UDim2.new(1, 0, 1, 0),
@@ -1662,6 +1661,7 @@ function MythicLib:MakeWindow(Configs)
 				CanvasSize = UDim2.new(),
 				ScrollingDirection = "Y",
 				AutomaticCanvasSize = "Y",
+				MultiSelect = true,
 				Active = true
 			}, {Create("UIPadding", {
 				PaddingLeft = UDim.new(0, 8),
@@ -1671,101 +1671,29 @@ function MythicLib:MakeWindow(Configs)
 			}), Create("UIListLayout", {
 				Padding = UDim.new(0, 4)
 			})}), "ScrollBar")
-
-			local ScrollSize, WaitClick = 5
-			local function Disable()
-				WaitClick = true
-				CreateTween({Arrow, "Rotation", 0, 0.2})
-				CreateTween({DropFrame, "Size", UDim2.new(0, 152, 0, 0), 0.2, true})
-				CreateTween({Arrow, "ImageColor3", Color3.fromRGB(255, 255, 255), 0.2})
-				Arrow.Image = "rbxassetid://10709791523"
-				NoClickFrame.Visible = false
-				WaitClick = false
-			end
-
-			local function GetFrameSize()
-				return UDim2.fromOffset(152, ScrollSize)
-			end
-
-			local function CalculateSize()
-				local Count = 0
-				for _, Frame in pairs(ScrollFrame:GetChildren()) do
-					if Frame:IsA("Frame") or Frame.Name == "Option" then
-						Count = Count + 1
-					end
-				end
-				ScrollSize = (math.clamp(Count, 0, 10) * 25) + 10
-				if NoClickFrame.Visible then
-					NoClickFrame.Visible = true
-					CreateTween({DropFrame, "Size", GetFrameSize(), 0.2, true})
-				end
-			end
-
-			local function Minimize()
-				if WaitClick then
-					return
-				end
-				WaitClick = true
-				if NoClickFrame.Visible then
-					Arrow.Image = "rbxassetid://10709791523"
-					CreateTween({Arrow, "ImageColor3", Color3.fromRGB(255, 255, 255), 0.2})
-					CreateTween({DropFrame, "Size", UDim2.new(0, 152, 0, 0), 0.2, true})
-					NoClickFrame.Visible = false
-				else
-					NoClickFrame.Visible = true
-					Arrow.Image = "rbxassetid://10709790948"
-					CreateTween({Arrow, "ImageColor3", Theme["Color Theme"], 0.2})
-					CreateTween({DropFrame, "Size", GetFrameSize(), 0.2, true})
-				end
-				WaitClick = false
-			end
-
-			local function CalculatePos()
-				local FramePos = SelectedFrame.AbsolutePosition
-				local ScreenSize = ScreenGui.AbsoluteSize
-				local ClampX = math.clamp((FramePos.X / UIScale), 0, ScreenSize.X / UIScale - DropFrame.Size.X.Offset)
-				local ClampY = math.clamp((FramePos.Y / UIScale), 0, ScreenSize.Y / UIScale)
-
-				local NewPos = UDim2.fromOffset(ClampX, ClampY)
-				local AnchorPoint = FramePos.Y > ScreenSize.Y / 1.4 and 1 or ScrollSize > 80 and 0.5 or 0
-				DropFrame.AnchorPoint = Vector2.new(0, AnchorPoint)
-				CreateTween({DropFrame, "Position", NewPos, 0.1})
-			end
-
-			local Default = (type(DDefault) == "table" and DDefault) or {DDefault}
-			local Options, MultSelected, Selected = {}, Default, Default
-
-			local function VerifyOption(Option)
-				for _, Val in pairs(Options) do
-					if Val.Name == Option then
-						return true
+		
+			local SelectedOptions = {}
+		
+			local function UpdateSelectedOptions()
+				SelectedOptions = {}
+				for _, Option in pairs(ScrollFrame:GetChildren()) do
+					if Option:IsA("Frame") and Option.Name == "Option" and Option.BackgroundColor3 == Theme["Color Theme"] then
+						table.insert(SelectedOptions, Option.TextLabel.Text)
 					end
 				end
 			end
-
+		
 			local function AddOption(OptionName)
 				OptionName = typeof(OptionName) == "Instance" and OptionName.Name or OptionName
-				if VerifyOption(OptionName) then
-					return
-				end
-
-				local Option = Make("Button", ScrollFrame, {
+		
+				local Option = Make("Frame", ScrollFrame, {
 					Name = "Option",
 					Size = UDim2.new(1, 0, 0, 21),
-					Position = UDim2.new(0, 0, 0.5),
-					AnchorPoint = Vector2.new(0, 0.5)
+					BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+					BorderSizePixel = 0,
 				})
 				Make("Corner", Option, UDim.new(0, 4))
-
-				local SelectedFrame = InsertTheme(Create("Frame", Option, {
-					Position = UDim2.new(0, 1, 0.5),
-					Size = UDim2.new(0, 4, 0, 4),
-					BackgroundColor3 = Theme["Color Theme"],
-					BackgroundTransparency = 1,
-					AnchorPoint = Vector2.new(0, 0.5)
-				}), "Theme")
-				Make("Corner", SelectedFrame, UDim.new(0.5, 0))
-
+		
 				local OptionLabel = InsertTheme(Create("TextLabel", Option, {
 					Size = UDim2.new(1, 0, 1),
 					Position = UDim2.new(0, 10),
@@ -1774,98 +1702,41 @@ function MythicLib:MakeWindow(Configs)
 					Font = Enum.Font.GothamBold,
 					TextXAlignment = "Left",
 					BackgroundTransparency = 1,
-					TextTransparency = 0.4
 				}), "Text")
-
-				local function CallbackFunc()
-					if Flag and typeof(Flag) == "string" then
-						SaveFile(Flag, MultSelected[1])
+		
+				Option.MouseButton1Click:Connect(function()
+					if Option.BackgroundColor3 == Theme["Color Theme"] then
+						Option.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+					else
+						Option.BackgroundColor3 = Theme["Color Theme"]
 					end
-					task.spawn(Callback, MultSelected[1])
-					table.foreach(MultCallback, function(_, func)
-						if type(func) == "function" then
-							task.spawn(func, MultSelected[1])
-						end
-					end)
-				end
-
-				local function Disable()
-					if MultSelected[1] == OptionName then
-						ActiveLabel.Text = "..."
-					end
-					Option:Destroy()
-					for ind, Val in pairs(Options) do
-						if Val.Button == Option then
-							table.remove(Options, ind)
-						end
-					end
-				end
-
-				local function Active()
-					for _, Val in pairs(Options) do
-						if Val.Button ~= Option then
-							CreateTween({Val.Label, "TextTransparency", 0.4, 0.35})
-							CreateTween({Val.Frame, "BackgroundTransparency", 1, 0.35})
-							CreateTween({Val.Frame, "Size", UDim2.fromOffset(4, 4), 0.35})
-						end
-					end
-					CreateTween({OptionLabel, "TextTransparency", 0, 0.35})
-					CreateTween({SelectedFrame, "BackgroundTransparency", 0, 0.35})
-					CreateTween({SelectedFrame, "Size", UDim2.fromOffset(4, 14), 0.35})
-					MultSelected = {OptionName}
-					ActiveLabel.Text = MultSelected[1]
-					CallbackFunc()
-				end
-
-				if table.find(MultSelected, OptionName) then
-					Active()
-				end
-
-				Option.Activated:Connect(function()
-					Active()
+					UpdateSelectedOptions()
 				end)
-
-				table.insert(Options, {
-					Button = Option,
-					Label = OptionLabel,
-					Frame = SelectedFrame,
-					Name = OptionName,
-					Active = Active,
-					Disable = Disable
-				})
 			end
-
+		
 			table.foreach(DOptions, function(_, Option)
 				AddOption(Option)
 			end)
-
+		
 			local function NewOptions(NewOptions)
-				for _, Val in pairs(Options) do
-					Val:Disable()
-				end
+				ScrollFrame:ClearAllChildren()
 				table.foreach(NewOptions, function(_, Val)
 					AddOption(Val)
 				end)
 			end
-
-			Button.Activated:Connect(Minimize)
-			NoClickFrame.MouseButton1Down:Connect(Disable)
-			NoClickFrame.MouseButton1Click:Connect(Disable)
-			MainFrame:GetPropertyChangedSignal("Visible"):Connect(Disable)
-			SelectedFrame:GetPropertyChangedSignal("AbsolutePosition"):Connect(CalculatePos)
-
-			Button.Activated:Connect(CalculateSize)
-			ScrollFrame.ChildAdded:Connect(CalculateSize)
-			ScrollFrame.ChildRemoved:Connect(CalculateSize)
-			CalculatePos()
-			CalculateSize()
-
+		
 			local Dropdown = {}
 			table.insert(MythicLib.Options, {
 				type = "Dropdown",
 				Name = DName,
 				func = Dropdown
 			})
+		
+			function Dropdown:GetSelected()
+				UpdateSelectedOptions()
+				return SelectedOptions
+			end
+		
 			function Dropdown:Visible(Bool)
 				if Bool == nil then
 					Button.Visible = not Button.Visible
@@ -1873,9 +1744,11 @@ function MythicLib:MakeWindow(Configs)
 				end
 				Button.Visible = Bool
 			end
+		
 			function Dropdown:Destroy()
 				Button:Destroy()
 			end
+		
 			function Dropdown:Add(...)
 				local NewOptions = {...}
 				if type(NewOptions[1]) == "table" then
@@ -1888,36 +1761,39 @@ function MythicLib:MakeWindow(Configs)
 					end)
 				end
 			end
+		
 			function Dropdown:Remove(Option)
 				if type(Option) == "string" then
-					for _, Val in pairs(Options) do
-						if Val.Name == Option then
-							Val.Disable()
+					for _, Child in pairs(ScrollFrame:GetChildren()) do
+						if Child:IsA("Frame") and Child.Name == "Option" and Child.TextLabel.Text == Option then
+							Child:Destroy()
 						end
 					end
 				elseif type(Option) == "number" then
-					for ind, Val in pairs(Options) do
-						if ind == Option then
-							Val.Disable()
-						end
+					local Child = ScrollFrame:GetChildren()[Option]
+					if Child and Child:IsA("Frame") and Child.Name == "Option" then
+						Child:Destroy()
 					end
 				end
+				UpdateSelectedOptions()
 			end
+		
 			function Dropdown:Select(Option)
 				if type(Option) == "string" then
-					for _, Val in pairs(Options) do
-						if Val.Name == Option then
-							Val.Active()
+					for _, Child in pairs(ScrollFrame:GetChildren()) do
+						if Child:IsA("Frame") and Child.Name == "Option" and Child.TextLabel.Text == Option then
+							Child.BackgroundColor3 = Theme["Color Theme"]
 						end
 					end
 				elseif type(Option) == "number" then
-					for ind, Val in pairs(Options) do
-						if ind == Option then
-							Val.Active()
-						end
+					local Child = ScrollFrame:GetChildren()[Option]
+					if Child and Child:IsA("Frame") and Child.Name == "Option" then
+						Child.BackgroundColor3 = Theme["Color Theme"]
 					end
 				end
+				UpdateSelectedOptions()
 			end
+
 			function Dropdown:Set(Val1)
 				if type(Val1) == "table" then
 					NewOptions(Val1)
@@ -1925,10 +1801,20 @@ function MythicLib:MakeWindow(Configs)
 					Callback = Val1
 				end
 			end
+
 			function Dropdown:Callback(func)
 				table.insert(MultCallback, func)
-				task.spawn(func, MultSelected[1])
+				task.spawn(func, Selected[1])
 			end
+
+			function Dropdown:GetCallback()
+				return Callback
+			end
+
+			function Dropdown:GetMultCallback()
+				return MultCallback
+			end
+
 			return Dropdown
 		end
 		function Tab:AddSlider(Configs)
