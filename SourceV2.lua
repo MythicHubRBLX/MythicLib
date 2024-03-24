@@ -1595,13 +1595,13 @@ function MythicLib:MakeWindow(Configs)
 			local Callback = Configs[4] or Configs.Callback or function() end
 			local Flag = Configs[5] or Configs.Flag or false
 			local MultCallback = {}
-		
+
 			if Flag and type(Flag) == "string" and assert(Flags, Flag) then
 				DDefault = Flags[Flag]
 			end
-		
+
 			local Button, LabelFunc = ButtonFrame(Container, DName, DDesc, UDim2.new(1, -180))
-		
+
 			local SelectedFrame = InsertTheme(Create("Frame", Button, {
 				Size = UDim2.new(0, 150, 0, 18),
 				Position = UDim2.new(1, -10, 0.5),
@@ -1609,7 +1609,7 @@ function MythicLib:MakeWindow(Configs)
 				BackgroundColor3 = Theme["Color Stroke"]
 			}), "Stroke")
 			Make("Corner", SelectedFrame, UDim.new(0, 4))
-		
+
 			local ActiveLabel = InsertTheme(Create("TextLabel", SelectedFrame, {
 				Size = UDim2.new(0.85, 0, 0.85, 0),
 				AnchorPoint = Vector2.new(0.5, 0.5),
@@ -1620,7 +1620,7 @@ function MythicLib:MakeWindow(Configs)
 				TextColor3 = Theme["Color Text"],
 				Text = "..."
 			}), "Text")
-		
+
 			local Arrow = Create("ImageLabel", SelectedFrame, {
 				Size = UDim2.new(0, 15, 0, 15),
 				Position = UDim2.new(0, -5, 0.5),
@@ -1628,7 +1628,7 @@ function MythicLib:MakeWindow(Configs)
 				Image = "rbxassetid://10709791523",
 				BackgroundTransparency = 1
 			})
-		
+
 			local NoClickFrame = Create("TextButton", DropdownHolder, {
 				Name = "AntiClick",
 				Size = UDim2.new(1, 0, 1, 0),
@@ -1636,7 +1636,7 @@ function MythicLib:MakeWindow(Configs)
 				Visible = false,
 				Text = ""
 			})
-		
+
 			local DropFrame = Create("Frame", NoClickFrame, {
 				Size = UDim2.new(SelectedFrame.Size.X, 0, 0),
 				BackgroundTransparency = 0.1,
@@ -1651,7 +1651,7 @@ function MythicLib:MakeWindow(Configs)
 			Make("Gradient", DropFrame, {
 				Rotation = 60
 			})
-		
+
 			local ScrollFrame = InsertTheme(Create("ScrollingFrame", DropFrame, {
 				ScrollBarImageColor3 = Theme["Color Theme"],
 				Size = UDim2.new(1, 0, 1, 0),
@@ -1671,10 +1671,10 @@ function MythicLib:MakeWindow(Configs)
 			}), Create("UIListLayout", {
 				Padding = UDim.new(0, 4)
 			})}), "ScrollBar")
-		
+
 			local SelectedOptions = {}
-		
-			local function UpdateSelectedOptions()
+
+			function UpdateSelectedOptions()
 				SelectedOptions = {}
 				for _, Option in pairs(ScrollFrame:GetChildren()) do
 					if Option:IsA("Frame") and Option.Name == "Option" and Option.BackgroundColor3 == Theme["Color Theme"] then
@@ -1682,10 +1682,10 @@ function MythicLib:MakeWindow(Configs)
 					end
 				end
 			end
-		
-			local function AddOption(OptionName)
+
+			function AddOption(OptionName)
 				OptionName = typeof(OptionName) == "Instance" and OptionName.Name or OptionName
-		
+			
 				local Option = Make("Frame", ScrollFrame, {
 					Name = "Option",
 					Size = UDim2.new(1, 0, 0, 21),
@@ -1693,7 +1693,7 @@ function MythicLib:MakeWindow(Configs)
 					BorderSizePixel = 0,
 				})
 				Make("Corner", Option, UDim.new(0, 4))
-		
+			
 				local OptionLabel = InsertTheme(Create("TextLabel", Option, {
 					Size = UDim2.new(1, 0, 1),
 					Position = UDim2.new(0, 10),
@@ -1703,40 +1703,42 @@ function MythicLib:MakeWindow(Configs)
 					TextXAlignment = "Left",
 					BackgroundTransparency = 1,
 				}), "Text")
-		
-				Option.MouseButton1Click:Connect(function()
+			
+				local function ToggleOption()
 					if Option.BackgroundColor3 == Theme["Color Theme"] then
 						Option.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 					else
 						Option.BackgroundColor3 = Theme["Color Theme"]
 					end
 					UpdateSelectedOptions()
-				end)
+				end
+			
+				Option.MouseButton1Click:Connect(ToggleOption)
 			end
-		
+
 			table.foreach(DOptions, function(_, Option)
 				AddOption(Option)
 			end)
-		
+
 			local function NewOptions(NewOptions)
 				ScrollFrame:ClearAllChildren()
 				table.foreach(NewOptions, function(_, Val)
 					AddOption(Val)
 				end)
 			end
-		
+
 			local Dropdown = {}
 			table.insert(MythicLib.Options, {
 				type = "Dropdown",
 				Name = DName,
 				func = Dropdown
 			})
-		
+
 			function Dropdown:GetSelected()
 				UpdateSelectedOptions()
 				return SelectedOptions
 			end
-		
+
 			function Dropdown:Visible(Bool)
 				if Bool == nil then
 					Button.Visible = not Button.Visible
@@ -1744,11 +1746,11 @@ function MythicLib:MakeWindow(Configs)
 				end
 				Button.Visible = Bool
 			end
-		
+
 			function Dropdown:Destroy()
 				Button:Destroy()
 			end
-		
+
 			function Dropdown:Add(...)
 				local NewOptions = {...}
 				if type(NewOptions[1]) == "table" then
@@ -1761,7 +1763,7 @@ function MythicLib:MakeWindow(Configs)
 					end)
 				end
 			end
-		
+
 			function Dropdown:Remove(Option)
 				if type(Option) == "string" then
 					for _, Child in pairs(ScrollFrame:GetChildren()) do
@@ -1777,7 +1779,7 @@ function MythicLib:MakeWindow(Configs)
 				end
 				UpdateSelectedOptions()
 			end
-		
+
 			function Dropdown:Select(Option)
 				if type(Option) == "string" then
 					for _, Child in pairs(ScrollFrame:GetChildren()) do
