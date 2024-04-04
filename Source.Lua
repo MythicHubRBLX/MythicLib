@@ -84,7 +84,7 @@ local MythicLib = {
 		}
 	},
 	Info = {
-		Version = "1.0.0",
+		Version = "1.0.1",
 		PlaceName = MarketplaceService:GetProductInfo(game.PlaceId).Name
 	},
 	Save = {
@@ -97,7 +97,7 @@ local MythicLib = {
 	Options = {},
 	Flags = {},
 	Tabs = {},
-	Icons = loadstring(game:HttpGet("https://raw.githubusercontent.com/MythicRBX/MythicLib/main/Icons.Lua"))()
+	Icons = loadstring(game:HttpGet("https://raw.githubusercontent.com/MythicHubRBLX/MythicLib/main/Icons.Lua"))()
 }
 
 local ViewportSize = workspace.CurrentCamera.ViewportSize
@@ -153,7 +153,8 @@ end
 local ScreenGui = Create("ScreenGui", CoreGui, {
 	Name = "MythicLib"
 }, {Create("UIScale", {
-	Scale = UIScale
+	Scale = UIScale,
+	Name = "Scale"
 })})
 
 local ScreenFind = CoreGui:FindFirstChild(ScreenGui.Name)
@@ -201,8 +202,9 @@ local function MakeDrag(Instance)
 
 		local function Update(Input)
 			local delta = Input.Position - DragStart
-			local Position = UDim2.new(StartPos.X.Scale, StartPos.X.Offset + delta.X / UIScale, StartPos.Y.Scale, StartPos.Y.Offset + delta.Y / UIScale)
-			Instance.Position = Position
+			local Position = UDim2.new(StartPos.X.Scale, StartPos.X.Offset + delta.X / UIScale, StartPos.Y.Scale,
+				StartPos.Y.Offset + delta.Y / UIScale)
+			-- Instance.Position = Position
 			CreateTween({Instance, "Position", Position, 0.35})
 		end
 
@@ -469,6 +471,11 @@ function MythicLib:SetTheme(NewTheme)
 	end)
 end
 
+function MythicLib:SetScale(NewScale)
+	NewScale = ViewportSize.Y / math.clamp(NewScale, 300, 2000)
+	UIScale, ScreenGui.Scale.Scale = NewScale, NewScale
+end
+
 function MythicLib:MakeWindow(Configs)
 	local WTitle = Configs[1] or Configs.Name or Configs.Title or "MythicLib"
 	local WMiniText = Configs[2] or Configs.SubTitle or "por: Equipe Mythic"
@@ -479,26 +486,16 @@ function MythicLib:MakeWindow(Configs)
 	if SaveCfg and type(SaveCfg) == "string" then
 		SaveCfg = string.gsub(SaveCfg, "/", "|")
 	end
-	if SaveRejoin and type(SaveRejoin) == "string" then
-		SaveRejoin = string.gsub(SaveRejoin, "/", "|")
-	end
 
 	local LastTick = tick()
 	local function SaveFile(Name, Value)
 		if writefile then
-			if SaveRejoin and type(SaveRejoin) == "string" then
-				Flags[Name] = Value
-
-				local encode = HttpService:JSONEncode({
-					LastTick = LastTick,
-					Flags = Flags
-				})
-				writefile(SaveRejoin, encode)
-			elseif SaveCfg and type(SaveCfg) == "string" then
+			if SaveCfg and type(SaveCfg) == "string" then
 				Flags[Name] = Value
 
 				local encode = HttpService:JSONEncode(Flags)
-				writefile(SaveCfg, encode)
+
+				pcall(writefile, SaveCfg, encode)
 			end
 		end
 	end
@@ -506,10 +503,13 @@ function MythicLib:MakeWindow(Configs)
 	local function LoadFile()
 		if SaveCfg and type(SaveCfg) == "string" then
 			if readfile and isfile and isfile(SaveCfg) then
-				local decode = HttpService:JSONDecode(readfile(SaveCfg))
+				local Error, Src = pcall(readfile, SaveCfg)
+				if Error and type(Src) == "string" then
+					Src = HttpService:JSONDecode(Src)
 
-				if decode and type(decode) == "table" then
-					Flags = decode
+					if type(Src) == "table" then
+						Flags = Src
+					end
 				end
 			end
 		end
@@ -746,8 +746,8 @@ function MythicLib:MakeWindow(Configs)
 			Window:MinimizeBtn()
 		end
 
-		local DTitle = Configs[1] or Configs.Title or "Diálogo"
-		local DText = Configs[2] or Configs.Text or "Isso é um Diálogo"
+		local DTitle = Configs[1] or Configs.Title or "Dialog"
+		local DText = Configs[2] or Configs.Text or "This is a Dialog"
 		local DOptions = Configs[3] or Configs.Options or {}
 
 		local Frame = Create("Frame", {
@@ -833,18 +833,15 @@ function MythicLib:MakeWindow(Configs)
 			Button.Activated:Connect(Dialog.Close)
 			Button.Activated:Connect(Callback)
 		end
-
 		function Dialog:Close()
 			CreateTween({Frame, "Size", UDim2.fromOffset(250 * 1.08, 150 * 1.08), 0.2})
 			CreateTween({Screen, "Transparency", 1, 0.15})
 			CreateTween({Frame, "Transparency", 1, 0.15, true})
 			Screen:Destroy()
 		end
-
 		table.foreach(DOptions, function(_, Button)
 			Dialog:Button(Button)
 		end)
-
 		return Dialog
 	end
 	function Window:SelectTab(TabSelect)
@@ -862,7 +859,7 @@ function MythicLib:MakeWindow(Configs)
 		if type(paste) == "table" then
 			Configs = paste
 		end
-		local TName = Configs[1] or Configs.Title or "Aba"
+		local TName = Configs[1] or Configs.Title or "Tab!"
 		local TIcon = Configs[2] or Configs.Icon or ""
 
 		TIcon = MythicLib:GetIcon(TIcon)
@@ -963,7 +960,6 @@ function MythicLib:MakeWindow(Configs)
 			func = Tab,
 			Cont = Container
 		})
-
 		Tab.Cont = Container
 
 		function Tab:Disable()
@@ -973,22 +969,18 @@ function MythicLib:MakeWindow(Configs)
 			CreateTween({Selected, "Size", UDim2.new(0, 4, 0, 4), 0.35})
 			CreateTween({Selected, "BackgroundTransparency", 1, 0.35})
 		end
-
 		function Tab:Enable()
 			Tabs()
 		end
-
 		function Tab:Visible(Bool)
 			if Bool == nil then
 				Container.Visible = not Container.Visible
 				TabSelect.Visible = not TabSelect.Visible
 				return
 			end
-
 			Container.Visible = Bool
 			TabSelect.Visible = Bool
 		end
-
 		function Tab:Destroy()
 			TabSelect:Destroy()
 			Container:Destroy()
@@ -1040,7 +1032,7 @@ function MythicLib:MakeWindow(Configs)
 			return Section
 		end
 		function Tab:AddParagraph(Configs)
-			local PName = Configs[1] or Configs.Title or "Paragráfo"
+			local PName = Configs[1] or Configs.Title or "Paragraph"
 			local PDesc = Configs[2] or Configs.Text or ""
 
 			local Frame, LabelFunc = ButtonFrame(Container, PName, PDesc, UDim2.new(1, -20))
@@ -1073,7 +1065,7 @@ function MythicLib:MakeWindow(Configs)
 			return Paragraph
 		end
 		function Tab:AddButton(Configs)
-			local BName = Configs[1] or Configs.Name or Configs.Title or "Botão"
+			local BName = Configs[1] or Configs.Name or Configs.Title or "Button!"
 			local BDescription = Configs.Desc or Configs.Description or ""
 			local Callback = Configs[2] or Configs.Callback or function()
 			end
@@ -1130,7 +1122,7 @@ function MythicLib:MakeWindow(Configs)
 			return Button
 		end
 		function Tab:AddToggle(Configs)
-			local TName = Configs[1] or Configs.Name or Configs.Title or "Alternância"
+			local TName = Configs[1] or Configs.Name or Configs.Title or "Toggle"
 			local TDesc = Configs.Desc or Configs.Description or ""
 			local Default = Configs[2] or Configs.Default or false
 			local Callback = Configs[3] or Configs.Callback or function()
@@ -1244,7 +1236,7 @@ function MythicLib:MakeWindow(Configs)
 			return Toggle
 		end
 		function Tab:AddDropdown(Configs)
-			local DName = Configs[1] or Configs.Name or Configs.Title or "Lista"
+			local DName = Configs[1] or Configs.Name or Configs.Title or "Dropdown"
 			local DDesc = Configs.Desc or Configs.Description or ""
 			local DOptions = Configs[2] or Configs.Options or {}
 			local DDefault = Configs[3] or Configs.Default or {}
@@ -1588,7 +1580,7 @@ function MythicLib:MakeWindow(Configs)
 			return Dropdown
 		end
 		function Tab:AddSlider(Configs)
-			local SName = Configs[1] or Configs.Name or Configs.Title or "Deslizador"
+			local SName = Configs[1] or Configs.Name or Configs.Title or "Slider!"
 			local SDesc = Configs.Desc or Configs.Description or ""
 			local Min = Configs[2] or Configs.MinValue or Configs.Min or 10
 			local Max = Configs[3] or Configs.MaxValue or Configs.Max or 100
@@ -1754,7 +1746,7 @@ function MythicLib:MakeWindow(Configs)
 			return Slider
 		end
 		function Tab:AddTextBox(Configs)
-			local TName = Configs[1] or Configs.Name or Configs.Title or "Caixa de Texto"
+			local TName = Configs[1] or Configs.Name or Configs.Title or "Text Box"
 			local TDesc = Configs.Desc or Configs.Description or ""
 			local TDefault = Configs[2] or Configs.Default or ""
 			local TPlaceholderText = Configs.PlaceholderText or "Input"
@@ -1901,7 +1893,7 @@ function MythicLib:MakeWindow(Configs)
 				Size = UDim2.new(1, -14, 0, 16),
 				AnchorPoint = Vector2.new(0.5, 1),
 				Position = UDim2.new(0.5, 0, 1, -7),
-				Text = "Entrar",
+				Text = "Juntar-se",
 				Font = Enum.Font.GothamBold,
 				TextSize = 12,
 				TextColor3 = Color3.fromRGB(220, 220, 220),
@@ -1918,13 +1910,13 @@ function MythicLib:MakeWindow(Configs)
 
 				ClickDelay = true
 				SetProps(JoinButton, {
-					Text = "Copiado para Área de Transferência",
+					Text = "Link Copiado para Área de Transferência",
 					BackgroundColor3 = Color3.fromRGB(100, 100, 100),
 					TextColor3 = Color3.fromRGB(150, 150, 150)
 				})
 				task.wait(5)
 				SetProps(JoinButton, {
-					Text = "Entrar",
+					Text = "Juntar-se",
 					BackgroundColor3 = Color3.fromRGB(50, 150, 50),
 					TextColor3 = Color3.fromRGB(220, 220, 220)
 				})
