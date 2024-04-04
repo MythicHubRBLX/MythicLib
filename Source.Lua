@@ -27,12 +27,12 @@ local MythicLib = {
 			["Color Dark Text"] = Color3.fromRGB(190, 190, 190)
 		},
 		Claro = {
-			["Color Hub 1"] = ColorSequence.new({ColorSequenceKeypoint.new(0.00, Color3.fromRGB(215, 215, 215)), ColorSequenceKeypoint.new(0.50, Color3.fromRGB(208, 208, 208)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(215, 215, 215))}),
-			["Color Hub 2"] = Color3.fromRGB(210, 210, 210),
-			["Color Stroke"] = Color3.fromRGB(190, 190, 190),
-			["Color Theme"] = Color3.fromRGB(65, 150, 255),
-			["Color Text"] = Color3.fromRGB(10, 10, 10),
-			["Color Dark Text"] = Color3.fromRGB(41, 41, 41)
+			["Color Hub 1"] = ColorSequence.new({ColorSequenceKeypoint.new(0.00, Color3.fromRGB(230.5, 220, 210)), ColorSequenceKeypoint.new(0.50, Color3.fromRGB(32.5, 32.5, 32.5)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(230.5, 220, 210))}),
+			["Color Hub 2"] = Color3.fromRGB(230, 230, 230),
+			["Color Stroke"] = Color3.fromRGB(140, 140, 140),
+			["Color Theme"] = Color3.fromRGB(150, 150, 150),
+			["Color Text"] = Color3.fromRGB(24, 24, 24),
+			["Color Dark Text"] = Color3.fromRGB(50, 50, 50)
 		},
 		Roxo = {
 			["Color Hub 1"] = ColorSequence.new({ColorSequenceKeypoint.new(0.00, Color3.fromRGB(27.5, 25, 30)), ColorSequenceKeypoint.new(0.50, Color3.fromRGB(32.5, 32.5, 32.5)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(27.5, 25, 30))}),
@@ -1753,7 +1753,12 @@ function MythicLib:MakeWindow(Configs)
 			local TClearText = Configs[3] or Configs.ClearText or false
 			local Callback = Configs[2] or Configs.Callback or function()
 			end
+			local Flag = Configs[4] or Configs.Flag or false
 			local MultCallback = {}
+
+			if Flag and type(Flag) == "string" and assert(Flags, Flag) then
+				TDefault = Flags[Flag]
+			end
 
 			if type(TDefault) ~= "string" or TDefault:gsub(" ", ""):len() < 1 then
 				TDefault = false
@@ -1793,6 +1798,9 @@ function MythicLib:MakeWindow(Configs)
 				local Text = TextBoxInput.Text
 				if Text:gsub(" ", ""):len() < 1 then
 					return
+				end
+				if Flag and typeof(Flag) == "string" then
+					SaveFile(Flag, Text)
 				end
 
 				task.spawn(Callback, Text)
