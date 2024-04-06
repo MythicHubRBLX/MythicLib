@@ -1155,12 +1155,12 @@ function MythicLib:MakeWindow(Configs)
 			}), "Theme")
 			Make("Corner", Toggle, UDim.new(0.5, 0))
 
-			if Flag and type(Flag) == "boolean" and assert(Flags, Flag) then
+			if Flag and type(Flag) == "string" and assert(Flags, Flag) then
 				Default = Flags[Flag]
 			end
 
 			local function CallbackFunc()
-				if Flag and typeof(Flag) == "boolean" then
+				if Flag and typeof(Flag) == "string" then
 					SaveFile(Flag, Default)
 				end
 				task.spawn(Callback, Default)
@@ -1592,7 +1592,7 @@ function MythicLib:MakeWindow(Configs)
 			local MultCallback = {}
 			Min, Max = Min / Increase, Max / Increase
 
-			if Flag and type(Flag) == "number" and assert(Flags, Flag) then
+			if Flag and type(Flag) == "string" and assert(Flags, Flag) then
 				Default = Flags[Flag]
 			end
 
