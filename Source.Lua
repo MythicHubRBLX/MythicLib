@@ -88,7 +88,7 @@ local MythicLib = {
 		PlaceName = MarketplaceService:GetProductInfo(game.PlaceId).Name
 	},
 	Save = {
-		UISize = {391, 289},
+		UISize = {420, 310},
 		TabSize = 160,
 		Theme = "Roxo"
 	},
@@ -101,7 +101,7 @@ local MythicLib = {
 }
 
 local ViewportSize = workspace.CurrentCamera.ViewportSize
-local UIScale = ViewportSize.Y / 500
+local UIScale = ViewportSize.Y / 460
 
 local function SetProps(Instance, Props)
 	if Props then
