@@ -1758,12 +1758,12 @@ function MythicLib:MakeWindow(Configs)
 			local Flag = Configs[5] or Configs.Flag or false
 			local MultCallback = {}
 
-			if Flag and type(Flag) == "string" and assert(Flags, Flag) then
-				TDefault = Flags[Flag]
-			end
-
 			if type(TDefault) ~= "string" or TDefault:gsub(" ", ""):len() < 1 then
 				TDefault = false
+			end
+
+			if Flag and type(Flag) == "string" and assert(Flags, Flag) then
+				TDefault = Flags[Flag]
 			end
 
 			local Button, LabelFunc = ButtonFrame(Container, TName, TDesc, UDim2.new(1, -38))
