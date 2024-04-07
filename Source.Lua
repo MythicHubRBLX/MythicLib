@@ -88,7 +88,7 @@ local MythicLib = {
 		PlaceName = MarketplaceService:GetProductInfo(game.PlaceId).Name
 	},
 	Save = {
-		UISize = {420, 310},
+		UISize = {460, 340},
 		TabSize = 160,
 		Theme = "Roxo"
 	},
