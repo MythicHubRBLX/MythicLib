@@ -88,7 +88,7 @@ local MythicLib = {
 		PlaceName = MarketplaceService:GetProductInfo(game.PlaceId).Name
 	},
 	Save = {
-		UISize = {460, 340},
+		UISize = {391, 289},
 		TabSize = 160,
 		Theme = "Roxo"
 	},
@@ -101,7 +101,7 @@ local MythicLib = {
 }
 
 local ViewportSize = workspace.CurrentCamera.ViewportSize
-local UIScale = ViewportSize.Y / 460
+local UIScale = ViewportSize.Y / 500
 
 local function SetProps(Instance, Props)
 	if Props then
@@ -263,11 +263,12 @@ local function LoadSettings(FileName)
 		end
 	end
 end
-LoadSettings("MythicLib.lua")
+LoadSettings("Mythic/Lib.lua")
 
 local function SaveJson(FileName, save)
-	if writefile then
+	if makefolder and writefile then
 		local json = HttpService:JSONEncode(save)
+		makefolder("/Mythic")
 		writefile(FileName, json)
 	end
 end
@@ -449,7 +450,7 @@ function MythicLib:SetTheme(NewTheme)
 	end
 
 	MythicLib.Save.Theme = NewTheme
-	SaveJson("MythicLib.lua", MythicLib.Save)
+	SaveJson("Mythic/Lib.lua", MythicLib.Save)
 	Theme = MythicLib.Themes[NewTheme]
 
 	table.foreach(MythicLib.Instances, function(_, Val)
@@ -483,9 +484,9 @@ function MythicLib:MakeWindow(Configs)
 	local SaveRejoin = Configs[4] or Configs.SaveRejoin or false
 	local Flags = MythicLib.Flags
 
-	if SaveCfg and type(SaveCfg) == "string" then
+	--[[if SaveCfg and type(SaveCfg) == "string" then
 		SaveCfg = string.gsub(SaveCfg, "/", "|")
-	end
+	end]]
 
 	local LastTick = tick()
 	local function SaveFile(Name, Value)
@@ -495,6 +496,7 @@ function MythicLib:MakeWindow(Configs)
 
 				local encode = HttpService:JSONEncode(Flags)
 
+				makefolder("/Mythic")
 				pcall(writefile, SaveCfg, encode)
 			end
 		end
@@ -634,13 +636,13 @@ function MythicLib:MakeWindow(Configs)
 	ConnectSave(ControlSize1, function()
 		if not Minimized then
 			MythicLib.Save.UISize = {MainFrame.Size.X.Offset, MainFrame.Size.Y.Offset}
-			SaveJson("MythicLib.lua", MythicLib.Save)
+			SaveJson("Mythic/Lib.lua", MythicLib.Save)
 		end
 	end)
 
 	ConnectSave(ControlSize2, function()
 		MythicLib.Save.TabSize = MainScroll.Size.X.Offset
-		SaveJson("MythicLib.lua", MythicLib.Save)
+		SaveJson("Mythic/Lib.lua", MythicLib.Save)
 	end)
 
 	local ButtonsFolder = Create("Folder", TopBar, {
@@ -1649,7 +1651,7 @@ function MythicLib:MakeWindow(Configs)
 			})
 
 			local function SaveSlider()
-				if Flag and typeof(Flag) == "number" then
+				if Flag and typeof(Flag) == "string" then
 					SaveFile(Flag, Default)
 				end
 			end
@@ -1751,9 +1753,9 @@ function MythicLib:MakeWindow(Configs)
 			local TDefault = Configs[2] or Configs.Default or ""
 			local TPlaceholderText = Configs.PlaceholderText or "Input"
 			local TClearText = Configs[3] or Configs.ClearText or false
-			local Callback = Configs[2] or Configs.Callback or function()
+			local Callback = Configs[4] or Configs.Callback or function()
 			end
-			local Flag = Configs[4] or Configs.Flag or false
+			local Flag = Configs[5] or Configs.Flag or false
 			local MultCallback = {}
 
 			if Flag and type(Flag) == "string" and assert(Flags, Flag) then
