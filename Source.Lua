@@ -84,78 +84,107 @@ local MythicLib = {
 		}
 	},
 	Info = {
-		Version = "1.0.1",
-		PlaceName = MarketplaceService:GetProductInfo(game.PlaceId).Name
+		Version = "1.0.2",
+		PlaceName = MarketplaceService:GetProductInfo(game.PlaceId).Name,
 	},
 	Save = {
 		UISize = {460, 340},
 		TabSize = 160,
-		Theme = "Roxo"
+		Theme = "Roxo",
 	},
 	Instances = {},
 	Elements = {},
 	Options = {},
 	Flags = {},
 	Tabs = {},
-	Icons = loadstring(game:HttpGet("https://raw.githubusercontent.com/MythicHubRBLX/MythicLib/main/Icons.Lua"))()
+	Icons = loadstring(game:HttpGet("https://raw.githubusercontent.com/MythicRBX/MythicLib/main/Icons.Lua"))(),
 }
 
 local ViewportSize = workspace.CurrentCamera.ViewportSize
 local UIScale = ViewportSize.Y / 460
 
-local function SetProps(Instance, Props)
-	if Props then
-		table.foreach(Props, function(prop, value)
-			Instance[prop] = value
-		end)
+local SetProps, SetChildren, InsertTheme, Create
+do
+	InsertTheme = function(Instance, Type)
+		table.insert(MythicLib.Instances, {
+			Instance = Instance,
+			Type = Type,
+		})
+		return Instance
 	end
-	return Instance
-end
 
-local function SetChildren(Instance, Children)
-	if Children then
-		table.foreach(Children, function(_, Child)
-			Child.Parent = Instance
-		end)
+	SetChildren = function(Instance, Children)
+		if Children then
+			table.foreach(Children, function(_, Child)
+				Child.Parent = Instance
+			end)
+		end
+		return Instance
 	end
-	return Instance
-end
 
-local function InsertTheme(Instance, Type)
-	table.insert(MythicLib.Instances, {
-		Instance = Instance,
-		Type = Type
-	})
-	return Instance
-end
-
-local function Create(...)
-	local args = {...}
-	if type(args) ~= "table" then
-		return
+	SetProps = function(Instance, Props)
+		if Props then
+			table.foreach(Props, function(prop, value)
+				Instance[prop] = value
+			end)
+		end
+		return Instance
 	end
-	local new = Instance.new(args[1])
-	local Children = {}
 
-	if type(args[2]) == "table" then
-		SetProps(new, args[2])
-		SetChildren(new, args[3])
-		Children = args[3] or {}
-	elseif typeof(args[2]) == "Instance" then
-		new.Parent = args[2]
-		SetProps(new, args[3])
-		SetChildren(new, args[4])
-		Children = args[4] or {}
+	Create = function(...)
+		local args = { ... }
+		if type(args) ~= "table" then
+			return
+		end
+		local new = Instance.new(args[1])
+		local Children = {}
+
+		if type(args[2]) == "table" then
+			SetProps(new, args[2])
+			SetChildren(new, args[3])
+			Children = args[3] or {}
+		elseif typeof(args[2]) == "Instance" then
+			new.Parent = args[2]
+			SetProps(new, args[3])
+			SetChildren(new, args[4])
+			Children = args[4] or {}
+		end
+		return new
 	end
-	return new
+
+	local function Save(file)
+		if readfile and isfile and isfile(FileName) then
+			local decode = HttpService:JSONDecode(readfile(FileName))
+
+			if type(decode) == "table" then
+				if rawget(decode, "UISize") then
+					MythicLib.Save["UISize"] = decode["UISize"]
+				end
+				if rawget(decode, "TabSize") then
+					MythicLib.Save["TabSize"] = decode["TabSize"]
+				end
+				if rawget(decode, "Theme") and VerifyTheme(decode["Theme"]) then
+					MythicLib.Save["Theme"] = decode["Theme"]
+				end
+			end
+		end
+	end
+
+	local success, debug = pcall(Save, "Mythic/Lib.lua")
+
+	if not success then
+		warn(debug)
+	end
 end
 
 local ScreenGui = Create("ScreenGui", CoreGui, {
-	Name = "MythicLib"
-}, {Create("UIScale", {
-	Scale = UIScale,
-	Name = "Scale"
-})})
+	Name = "MythicLib",
+}, {
+	Create("UIScale", {
+		Scale = UIScale,
+		Name = "Scale",
+	}),
+})
 
 local ScreenFind = CoreGui:FindFirstChild(ScreenGui.Name)
 if ScreenFind and ScreenFind ~= ScreenGui then
@@ -164,7 +193,10 @@ end
 
 local function ConnectSave(Instance, func)
 	Instance.InputBegan:Connect(function(Input)
-		if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+		if
+			Input.UserInputType == Enum.UserInputType.MouseButton1
+			or Input.UserInputType == Enum.UserInputType.Touch
+		then
 			while UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) do
 				task.wait()
 			end
@@ -181,9 +213,7 @@ local function CreateTween(Configs)
 	local TweenWait = Configs[5] or Configs.wait or false
 	local TweenInfo = TweenInfo.new(Time, Enum.EasingStyle.Quint)
 
-	local Tween = TweenService:Create(Instance, TweenInfo, {
-		[Prop] = NewVal
-	})
+	local Tween = TweenService:Create(Instance, TweenInfo, { [Prop] = NewVal })
 	Tween:Play()
 	if TweenWait then
 		Tween.Completed:Wait()
@@ -195,17 +225,21 @@ local function MakeDrag(Instance)
 	task.spawn(function()
 		SetProps(Instance, {
 			Active = true,
-			AutoButtonColor = false
+			AutoButtonColor = false,
 		})
 
 		local DragStart, StartPos, InputOn
 
 		local function Update(Input)
 			local delta = Input.Position - DragStart
-			local Position = UDim2.new(StartPos.X.Scale, StartPos.X.Offset + delta.X / UIScale, StartPos.Y.Scale,
-				StartPos.Y.Offset + delta.Y / UIScale)
+			local Position = UDim2.new(
+				StartPos.X.Scale,
+				StartPos.X.Offset + delta.X / UIScale,
+				StartPos.Y.Scale,
+				StartPos.Y.Offset + delta.Y / UIScale
+			)
 			-- Instance.Position = Position
-			CreateTween({Instance, "Position", Position, 0.35})
+			CreateTween({ Instance, "Position", Position, 0.35 })
 		end
 
 		Instance.MouseButton1Down:Connect(function()
@@ -213,7 +247,10 @@ local function MakeDrag(Instance)
 		end)
 
 		Instance.InputBegan:Connect(function(Input)
-			if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+			if
+				Input.UserInputType == Enum.UserInputType.MouseButton1
+				or Input.UserInputType == Enum.UserInputType.Touch
+			then
 				StartPos = Instance.Position
 				DragStart = Input.Position
 
@@ -238,35 +275,8 @@ local function VerifyTheme(Theme)
 	end
 end
 
-local function assert(table, name)
-	for ind, _ in pairs(table) do
-		if ind == name then
-			return true
-		end
-	end
-end
-
-local function LoadSettings(FileName)
-	if readfile and isfile and isfile(FileName) then
-		local decode = HttpService:JSONDecode(readfile(FileName))
-
-		if decode and typeof(decode) == "table" then
-			if assert(decode, "UISize") then
-				MythicLib.Save["UISize"] = decode["UISize"]
-			end
-			if assert(decode, "TabSize") then
-				MythicLib.Save["TabSize"] = decode["TabSize"]
-			end
-			if assert(decode, "Theme") and VerifyTheme(decode["Theme"]) then
-				MythicLib.Save["Theme"] = decode["Theme"]
-			end
-		end
-	end
-end
-LoadSettings("Mythic/Lib.lua")
-
 local function SaveJson(FileName, save)
-	if makefolder and writefile then
+	if writefile then
 		local json = HttpService:JSONEncode(save)
 		makefolder("/Mythic")
 		writefile(FileName, json)
@@ -285,30 +295,45 @@ local function Make(Ele, Instance, props, ...)
 end
 
 AddEle("Corner", function(parent, CornerRadius)
-	local New = SetProps(Create("UICorner", parent, {
-		CornerRadius = CornerRadius or UDim.new(0, 7)
-	}), props)
+	local New = SetProps(
+		Create("UICorner", parent, {
+			CornerRadius = CornerRadius or UDim.new(0, 7),
+		}),
+		props
+	)
 	return New
 end)
 
 AddEle("Stroke", function(parent, props, ...)
-	local args = {...}
-	local New = InsertTheme(SetProps(Create("UIStroke", parent, {
-		Color = args[1] or Theme["Color Stroke"],
-		Thickness = args[2] or 1,
-		ApplyStrokeMode = "Border"
-	}), props), "Stroke")
+	local args = { ... }
+	local New = InsertTheme(
+		SetProps(
+			Create("UIStroke", parent, {
+				Color = args[1] or Theme["Color Stroke"],
+				Thickness = args[2] or 1,
+				ApplyStrokeMode = "Border",
+			}),
+			props
+		),
+		"Stroke"
+	)
 	return New
 end)
 
 AddEle("Button", function(parent, props, ...)
-	local args = {...}
-	local New = InsertTheme(SetProps(Create("TextButton", parent, {
-		Text = "",
-		Size = UDim2.fromScale(1, 1),
-		BackgroundColor3 = Theme["Color Hub 2"],
-		AutoButtonColor = false
-	}), props), "Frame")
+	local args = { ... }
+	local New = InsertTheme(
+		SetProps(
+			Create("TextButton", parent, {
+				Text = "",
+				Size = UDim2.fromScale(1, 1),
+				BackgroundColor3 = Theme["Color Hub 2"],
+				AutoButtonColor = false,
+			}),
+			props
+		),
+		"Frame"
+	)
 
 	New.MouseEnter:Connect(function()
 		New.BackgroundTransparency = 0.4
@@ -323,47 +348,59 @@ AddEle("Button", function(parent, props, ...)
 end)
 
 AddEle("Gradient", function(parent, props, ...)
-	local args = {...}
-	local New = InsertTheme(SetProps(Create("UIGradient", parent, {
-		Color = Theme["Color Hub 1"]
-	}), props), "Gradient")
+	local args = { ... }
+	local New = InsertTheme(
+		SetProps(
+			Create("UIGradient", parent, {
+				Color = Theme["Color Hub 1"],
+			}),
+			props
+		),
+		"Gradient"
+	)
 	return New
 end)
 
 local function ButtonFrame(Instance, Title, Description, HolderSize)
-	local TitleL = InsertTheme(Create("TextLabel", {
-		Font = Enum.Font.GothamMedium,
-		TextColor3 = Theme["Color Text"],
-		Size = UDim2.new(1, -20),
-		AutomaticSize = "Y",
-		Position = UDim2.new(0, 0, 0.5),
-		AnchorPoint = Vector2.new(0, 0.5),
-		BackgroundTransparency = 1,
-		TextTruncate = "AtEnd",
-		TextSize = 10,
-		TextXAlignment = "Left",
-		Text = "",
-		RichText = true
-	}), "Text")
+	local TitleL = InsertTheme(
+		Create("TextLabel", {
+			Font = Enum.Font.GothamMedium,
+			TextColor3 = Theme["Color Text"],
+			Size = UDim2.new(1, -20),
+			AutomaticSize = "Y",
+			Position = UDim2.new(0, 0, 0.5),
+			AnchorPoint = Vector2.new(0, 0.5),
+			BackgroundTransparency = 1,
+			TextTruncate = "AtEnd",
+			TextSize = 10,
+			TextXAlignment = "Left",
+			Text = "",
+			RichText = true,
+		}),
+		"Text"
+	)
 
-	local DescL = InsertTheme(Create("TextLabel", {
-		Font = Enum.Font.Gotham,
-		TextColor3 = Theme["Color Dark Text"],
-		Size = UDim2.new(1, -20),
-		AutomaticSize = "Y",
-		Position = UDim2.new(0, 12, 0, 15),
-		BackgroundTransparency = 1,
-		TextWrapped = true,
-		TextSize = 8,
-		TextXAlignment = "Left",
-		Text = "",
-		RichText = true
-	}), "DarkText")
+	local DescL = InsertTheme(
+		Create("TextLabel", {
+			Font = Enum.Font.Gotham,
+			TextColor3 = Theme["Color Dark Text"],
+			Size = UDim2.new(1, -20),
+			AutomaticSize = "Y",
+			Position = UDim2.new(0, 12, 0, 15),
+			BackgroundTransparency = 1,
+			TextWrapped = true,
+			TextSize = 8,
+			TextXAlignment = "Left",
+			Text = "",
+			RichText = true,
+		}),
+		"DarkText"
+	)
 
 	local Frame = Make("Button", Instance, {
 		Size = UDim2.new(1, 0, 0, 25),
 		AutomaticSize = "Y",
-		Name = "Option"
+		Name = "Option",
 	})
 	Make("Corner", Frame, UDim.new(0, 6))
 
@@ -372,15 +409,20 @@ local function ButtonFrame(Instance, Title, Description, HolderSize)
 		BackgroundTransparency = 1,
 		Size = HolderSize,
 		Position = UDim2.new(0, 10, 0),
-		AnchorPoint = Vector2.new(0, 0)
-	}, {Create("UIListLayout", {
-		SortOrder = "LayoutOrder",
-		VerticalAlignment = "Center",
-		Padding = UDim.new(0, 2)
-	}), Create("UIPadding", {
-		PaddingBottom = UDim.new(0, 5),
-		PaddingTop = UDim.new(0, 5)
-	}), TitleL, DescL})
+		AnchorPoint = Vector2.new(0, 0),
+	}, {
+		Create("UIListLayout", {
+			SortOrder = "LayoutOrder",
+			VerticalAlignment = "Center",
+			Padding = UDim.new(0, 2),
+		}),
+		Create("UIPadding", {
+			PaddingBottom = UDim.new(0, 5),
+			PaddingTop = UDim.new(0, 5),
+		}),
+		TitleL,
+		DescL,
+	})
 
 	local Label = {}
 	function Label:SetTitle(NewTitle)
@@ -484,9 +526,9 @@ function MythicLib:MakeWindow(Configs)
 	local SaveRejoin = Configs[4] or Configs.SaveRejoin or false
 	local Flags = MythicLib.Flags
 
-	--[[if SaveCfg and type(SaveCfg) == "string" then
+	if SaveCfg and type(SaveCfg) == "string" then
 		SaveCfg = string.gsub(SaveCfg, "/", "|")
-	end]]
+	end
 
 	local LastTick = tick()
 	local function SaveFile(Name, Value)
@@ -496,7 +538,6 @@ function MythicLib:MakeWindow(Configs)
 
 				local encode = HttpService:JSONEncode(Flags)
 
-				makefolder("/Mythic")
 				pcall(writefile, SaveCfg, encode)
 			end
 		end
@@ -505,8 +546,9 @@ function MythicLib:MakeWindow(Configs)
 	local function LoadFile()
 		if SaveCfg and type(SaveCfg) == "string" then
 			if readfile and isfile and isfile(SaveCfg) then
-				local Error, Src = pcall(readfile, SaveCfg)
-				if Error and type(Src) == "string" then
+				local success, Src = pcall(readfile, SaveCfg)
+
+				if success and type(Src) == "string" then
 					Src = HttpService:JSONDecode(Src)
 
 					if type(Src) == "table" then
@@ -519,80 +561,97 @@ function MythicLib:MakeWindow(Configs)
 	LoadFile()
 
 	local UISizeX, UISizeY = unpack(MythicLib.Save.UISize)
-	local MainFrame = InsertTheme(Create("ImageButton", ScreenGui, {
-		Size = UDim2.fromOffset(UISizeX, UISizeY),
-		Position = UDim2.new(0.5, -UISizeX / 2, 0.5, -UISizeY / 2),
-		BackgroundTransparency = 0.03,
-		Name = "Hub"
-	}), "Main")
+	local MainFrame = InsertTheme(
+		Create("ImageButton", ScreenGui, {
+			Size = UDim2.fromOffset(UISizeX, UISizeY),
+			Position = UDim2.new(0.5, -UISizeX / 2, 0.5, -UISizeY / 2),
+			BackgroundTransparency = 0.03,
+			Name = "Hub",
+		}),
+		"Main"
+	)
 	Make("Gradient", MainFrame, {
-		Rotation = 45
+		Rotation = 45,
 	})
 	MakeDrag(MainFrame)
 
 	local MainCorner = Make("Corner", MainFrame)
 
 	local Components = Create("Folder", MainFrame, {
-		Name = "Components"
+		Name = "Components",
 	})
 
 	local DropdownHolder = Create("Folder", ScreenGui, {
-		Name = "Dropdown"
+		Name = "Dropdown",
 	})
 
 	local TopBar = Create("Frame", Components, {
 		Size = UDim2.new(1, 0, 0, 28),
 		BackgroundTransparency = 1,
-		Name = "Top Bar"
+		Name = "Top Bar",
 	})
 
-	local Title = InsertTheme(Create("TextLabel", TopBar, {
-		Position = UDim2.new(0, 15, 0.5),
-		AnchorPoint = Vector2.new(0, 0.5),
-		AutomaticSize = "XY",
-		Text = WTitle,
-		TextXAlignment = "Left",
-		TextSize = 12,
-		TextColor3 = Theme["Color Text"],
-		BackgroundTransparency = 1,
-		Font = Enum.Font.GothamMedium,
-		Name = "Title"
-	}, {InsertTheme(Create("TextLabel", {
-		Size = UDim2.fromScale(0, 1),
-		AutomaticSize = "X",
-		AnchorPoint = Vector2.new(0, 1),
-		Position = UDim2.new(1, 5, 0.9),
-		Text = WMiniText,
-		TextColor3 = Theme["Color Dark Text"],
-		BackgroundTransparency = 1,
-		TextXAlignment = "Left",
-		TextYAlignment = "Bottom",
-		TextSize = 8,
-		Font = Enum.Font.Gotham,
-		Name = "SubTitle"
-	}), "DarkText")}), "Text")
+	local Title = InsertTheme(
+		Create("TextLabel", TopBar, {
+			Position = UDim2.new(0, 15, 0.5),
+			AnchorPoint = Vector2.new(0, 0.5),
+			AutomaticSize = "XY",
+			Text = WTitle,
+			TextXAlignment = "Left",
+			TextSize = 12,
+			TextColor3 = Theme["Color Text"],
+			BackgroundTransparency = 1,
+			Font = Enum.Font.GothamMedium,
+			Name = "Title",
+		}, {
+			InsertTheme(
+				Create("TextLabel", {
+					Size = UDim2.fromScale(0, 1),
+					AutomaticSize = "X",
+					AnchorPoint = Vector2.new(0, 1),
+					Position = UDim2.new(1, 5, 0.9),
+					Text = WMiniText,
+					TextColor3 = Theme["Color Dark Text"],
+					BackgroundTransparency = 1,
+					TextXAlignment = "Left",
+					TextYAlignment = "Bottom",
+					TextSize = 8,
+					Font = Enum.Font.Gotham,
+					Name = "SubTitle",
+				}),
+				"DarkText"
+			),
+		}),
+		"Text"
+	)
 
-	local MainScroll = InsertTheme(Create("ScrollingFrame", Components, {
-		Size = UDim2.new(0, MythicLib.Save.TabSize, 1, -TopBar.Size.Y.Offset),
-		ScrollBarImageColor3 = Theme["Color Theme"],
-		Position = UDim2.new(0, 0, 1, 0),
-		AnchorPoint = Vector2.new(0, 1),
-		ScrollBarThickness = 1.5,
-		BackgroundTransparency = 1,
-		ScrollBarImageTransparency = 0.2,
-		CanvasSize = UDim2.new(),
-		AutomaticCanvasSize = "Y",
-		ScrollingDirection = "Y",
-		BorderSizePixel = 0,
-		Name = "Tab Scroll"
-	}, {Create("UIPadding", {
-		PaddingLeft = UDim.new(0, 10),
-		PaddingRight = UDim.new(0, 10),
-		PaddingTop = UDim.new(0, 10),
-		PaddingBottom = UDim.new(0, 10)
-	}), Create("UIListLayout", {
-		Padding = UDim.new(0, 5)
-	})}), "ScrollBar")
+	local MainScroll = InsertTheme(
+		Create("ScrollingFrame", Components, {
+			Size = UDim2.new(0, MythicLib.Save.TabSize, 1, -TopBar.Size.Y.Offset),
+			ScrollBarImageColor3 = Theme["Color Theme"],
+			Position = UDim2.new(0, 0, 1, 0),
+			AnchorPoint = Vector2.new(0, 1),
+			ScrollBarThickness = 1.5,
+			BackgroundTransparency = 1,
+			ScrollBarImageTransparency = 0.2,
+			CanvasSize = UDim2.new(),
+			AutomaticCanvasSize = "Y",
+			ScrollingDirection = "Y",
+			BorderSizePixel = 0,
+			Name = "Tab Scroll",
+		}, {
+			Create("UIPadding", {
+				PaddingLeft = UDim.new(0, 10),
+				PaddingRight = UDim.new(0, 10),
+				PaddingTop = UDim.new(0, 10),
+				PaddingBottom = UDim.new(0, 10),
+			}),
+			Create("UIListLayout", {
+				Padding = UDim.new(0, 5),
+			}),
+		}),
+		"ScrollBar"
+	)
 
 	local Containers = Create("Frame", Components, {
 		Size = UDim2.new(1, -MainScroll.Size.X.Offset, 1, -TopBar.Size.Y.Offset),
@@ -600,29 +659,30 @@ function MythicLib:MakeWindow(Configs)
 		Position = UDim2.new(1, 0, 1, 0),
 		BackgroundTransparency = 1,
 		ClipsDescendants = true,
-		Name = "Containers"
+		Name = "Containers",
 	})
 
-	local ControlSize1, ControlSize2 = MakeDrag(Create("ImageButton", MainFrame, {
-		Size = UDim2.new(0, 35, 0, 35),
-		Position = MainFrame.Size,
-		Active = true,
-		AnchorPoint = Vector2.new(0.8, 0.8),
-		BackgroundTransparency = 1,
-		Name = "Control Hub Size"
-	})), MakeDrag(Create("ImageButton", MainFrame, {
-		Size = UDim2.new(0, 20, 1, -30),
-		Position = UDim2.new(0, MainScroll.Size.X.Offset, 1, 0),
-		AnchorPoint = Vector2.new(0.5, 1),
-		Active = true,
-		BackgroundTransparency = 1,
-		Name = "Control Tab Size"
-	}))
+	local ControlSize1, ControlSize2 =
+		MakeDrag(Create("ImageButton", MainFrame, {
+			Size = UDim2.new(0, 35, 0, 35),
+			Position = MainFrame.Size,
+			Active = true,
+			AnchorPoint = Vector2.new(0.8, 0.8),
+			BackgroundTransparency = 1,
+			Name = "Control Hub Size",
+		})), MakeDrag(Create("ImageButton", MainFrame, {
+			Size = UDim2.new(0, 20, 1, -30),
+			Position = UDim2.new(0, MainScroll.Size.X.Offset, 1, 0),
+			AnchorPoint = Vector2.new(0.5, 1),
+			Active = true,
+			BackgroundTransparency = 1,
+			Name = "Control Tab Size",
+		}))
 
 	local function ControlSize()
 		local Pos1, Pos2 = ControlSize1.Position, ControlSize2.Position
-		ControlSize1.Position = UDim2.fromOffset(math.clamp(Pos1.X.Offset, 430, 1000),
-			math.clamp(Pos1.Y.Offset, 200, 500))
+		ControlSize1.Position =
+			UDim2.fromOffset(math.clamp(Pos1.X.Offset, 430, 1000), math.clamp(Pos1.Y.Offset, 200, 500))
 		ControlSize2.Position = UDim2.new(0, math.clamp(Pos2.X.Offset, 135, 250), 1, 0)
 
 		MainScroll.Size = UDim2.new(0, ControlSize2.Position.X.Offset, 1, -TopBar.Size.Y.Offset)
@@ -635,7 +695,7 @@ function MythicLib:MakeWindow(Configs)
 
 	ConnectSave(ControlSize1, function()
 		if not Minimized then
-			MythicLib.Save.UISize = {MainFrame.Size.X.Offset, MainFrame.Size.Y.Offset}
+			MythicLib.Save.UISize = { MainFrame.Size.X.Offset, MainFrame.Size.Y.Offset }
 			SaveJson("Mythic/Lib.lua", MythicLib.Save)
 		end
 	end)
@@ -646,7 +706,7 @@ function MythicLib:MakeWindow(Configs)
 	end)
 
 	local ButtonsFolder = Create("Folder", TopBar, {
-		Name = "Buttons"
+		Name = "Buttons",
 	})
 
 	local CloseButton = Create("ImageButton", {
@@ -656,26 +716,35 @@ function MythicLib:MakeWindow(Configs)
 		BackgroundTransparency = 1,
 		Image = "rbxassetid://10747384394",
 		AutoButtonColor = false,
-		Name = "Close"
+		Name = "Close",
 	})
 
 	local MinimizeButton = SetProps(CloseButton:Clone(), {
 		Position = UDim2.new(1, -35, 0.5),
 		Image = "rbxassetid://10734896206",
-		Name = "Minimize"
+		Name = "Minimize",
 	})
 
-	SetChildren(ButtonsFolder, {CloseButton, MinimizeButton})
+	SetChildren(ButtonsFolder, {
+		CloseButton,
+		MinimizeButton,
+	})
 
 	local Minimized, SaveSize, WaitClick
 	local Window, FirstTab = {}, false
 	function Window:CloseBtn()
 		local Dialog = Window:Dialog({
-			Title = "Fechar",
-			Text = "Certeza que Deseja Fechar o Script?",
-			Options = {{"Confirm", function()
-				ScreenGui:Destroy()
-			end}, {"Cancel"}}
+			Title = "Close",
+			Text = "Are you sure you want to close this script??",
+			Options = {
+				{
+					"Confirm",
+					function()
+						ScreenGui:Destroy()
+					end,
+				},
+				{ "Cancel" },
+			},
 		})
 	end
 	function Window:MinimizeBtn()
@@ -686,7 +755,7 @@ function MythicLib:MakeWindow(Configs)
 
 		if Minimized then
 			MinimizeButton.Image = "rbxassetid://10734896206"
-			CreateTween({MainFrame, "Size", SaveSize, 0.25, true})
+			CreateTween({ MainFrame, "Size", SaveSize, 0.25, true })
 			ControlSize1.Visible = true
 			ControlSize2.Visible = true
 			Minimized = false
@@ -695,7 +764,7 @@ function MythicLib:MakeWindow(Configs)
 			SaveSize = MainFrame.Size
 			ControlSize1.Visible = false
 			ControlSize2.Visible = false
-			CreateTween({MainFrame, "Size", UDim2.fromOffset(MainFrame.Size.X.Offset, 28), 0.25, true})
+			CreateTween({ MainFrame, "Size", UDim2.fromOffset(MainFrame.Size.X.Offset, 28), 0.25, true })
 			Minimized = true
 		end
 
@@ -710,7 +779,7 @@ function MythicLib:MakeWindow(Configs)
 			Position = UDim2.fromScale(0.15, 0.15),
 			BackgroundTransparency = 1,
 			BackgroundColor3 = Theme["Color Hub 2"],
-			AutoButtonColor = false
+			AutoButtonColor = false,
 		}))
 
 		local Stroke, Corner
@@ -729,7 +798,7 @@ function MythicLib:MakeWindow(Configs)
 		return {
 			Stroke = Stroke,
 			Corner = Corner,
-			Button = Button
+			Button = Button,
 		}
 	end
 	function Window:Set(Val1, Val2)
@@ -756,31 +825,38 @@ function MythicLib:MakeWindow(Configs)
 			Active = true,
 			Size = UDim2.fromOffset(250 * 1.08, 150 * 1.08),
 			Position = UDim2.fromScale(0.5, 0.5),
-			AnchorPoint = Vector2.new(0.5, 0.5)
-		}, {InsertTheme(Create("TextLabel", {
-			Font = Enum.Font.GothamBold,
-			Size = UDim2.new(1, 0, 0, 20),
-			Text = DTitle,
-			TextXAlignment = "Left",
-			TextColor3 = Theme["Color Text"],
-			TextSize = 15,
-			Position = UDim2.fromOffset(15, 5),
-			BackgroundTransparency = 1
-		}), "Text"), InsertTheme(Create("TextLabel", {
-			Font = Enum.Font.GothamMedium,
-			Size = UDim2.new(1, -25),
-			AutomaticSize = "Y",
-			Text = DText,
-			TextXAlignment = "Left",
-			TextColor3 = Theme["Color Dark Text"],
-			TextSize = 12,
-			Position = UDim2.fromOffset(15, 25),
-			BackgroundTransparency = 1,
-			TextWrapped = true
-		}), "DarkText")})
-		Make("Gradient", Frame, {
-			Rotation = 270
+			AnchorPoint = Vector2.new(0.5, 0.5),
+		}, {
+			InsertTheme(
+				Create("TextLabel", {
+					Font = Enum.Font.GothamBold,
+					Size = UDim2.new(1, 0, 0, 20),
+					Text = DTitle,
+					TextXAlignment = "Left",
+					TextColor3 = Theme["Color Text"],
+					TextSize = 15,
+					Position = UDim2.fromOffset(15, 5),
+					BackgroundTransparency = 1,
+				}),
+				"Text"
+			),
+			InsertTheme(
+				Create("TextLabel", {
+					Font = Enum.Font.GothamMedium,
+					Size = UDim2.new(1, -25),
+					AutomaticSize = "Y",
+					Text = DText,
+					TextXAlignment = "Left",
+					TextColor3 = Theme["Color Dark Text"],
+					TextSize = 12,
+					Position = UDim2.fromOffset(15, 25),
+					BackgroundTransparency = 1,
+					TextWrapped = true,
+				}),
+				"DarkText"
+			),
 		})
+		Make("Gradient", Frame, { Rotation = 270 })
 		Make("Corner", Frame)
 
 		local ButtonsHolder = Create("Frame", Frame, {
@@ -788,34 +864,38 @@ function MythicLib:MakeWindow(Configs)
 			Position = UDim2.fromScale(0, 1),
 			AnchorPoint = Vector2.new(0, 1),
 			BackgroundColor3 = Theme["Color Hub 2"],
-			BackgroundTransparency = 1
-		}, {Create("UIListLayout", {
-			Padding = UDim.new(0, 10),
-			VerticalAlignment = "Center",
-			FillDirection = "Horizontal",
-			HorizontalAlignment = "Center"
-		})})
+			BackgroundTransparency = 1,
+		}, {
+			Create("UIListLayout", {
+				Padding = UDim.new(0, 10),
+				VerticalAlignment = "Center",
+				FillDirection = "Horizontal",
+				HorizontalAlignment = "Center",
+			}),
+		})
 
-		local Screen = InsertTheme(Create("Frame", MainFrame, {
-			BackgroundTransparency = 0.6,
-			Active = true,
-			BackgroundColor3 = Theme["Color Hub 2"],
-			Size = UDim2.new(1, 0, 1, 0),
-			BackgroundColor3 = Theme["Color Stroke"],
-			Name = "Dialog"
-		}), "Stroke")
+		local Screen = InsertTheme(
+			Create("Frame", MainFrame, {
+				BackgroundTransparency = 0.6,
+				Active = true,
+				BackgroundColor3 = Theme["Color Hub 2"],
+				Size = UDim2.new(1, 0, 1, 0),
+				BackgroundColor3 = Theme["Color Stroke"],
+				Name = "Dialog",
+			}),
+			"Stroke"
+		)
 
 		MainCorner:Clone().Parent = Screen
 		Frame.Parent = Screen
-		CreateTween({Frame, "Size", UDim2.fromOffset(250, 150), 0.2})
-		CreateTween({Frame, "Transparency", 0, 0.15})
-		CreateTween({Screen, "Transparency", 0.3, 0.15})
+		CreateTween({ Frame, "Size", UDim2.fromOffset(250, 150), 0.2 })
+		CreateTween({ Frame, "Transparency", 0, 0.15 })
+		CreateTween({ Screen, "Transparency", 0.3, 0.15 })
 
 		local ButtonCount, Dialog = 1, {}
 		function Dialog:Button(Configs)
 			local Name = Configs[1] or Configs.Name or Configs.Title or ""
-			local Callback = Configs[2] or Configs.Callback or function()
-			end
+			local Callback = Configs[2] or Configs.Callback or function() end
 
 			ButtonCount = ButtonCount + 1
 			local Button = Make("Button", ButtonsHolder)
@@ -824,21 +904,21 @@ function MythicLib:MakeWindow(Configs)
 				Text = Name,
 				Font = Enum.Font.GothamBold,
 				TextColor3 = Theme["Color Text"],
-				TextSize = 12
+				TextSize = 12,
 			})
 
 			for _, Button in pairs(ButtonsHolder:GetChildren()) do
 				if Button:IsA("TextButton") then
-					Button.Size = UDim2.new(1 / ButtonCount, -(((ButtonCount - 1) * 20) / ButtonCount), 0, 32) -- Fluent Library :)
+					Button.Size = UDim2.new(1 / ButtonCount, -(((ButtonCount - 1) * 20) / ButtonCount), 0, 32)
 				end
 			end
 			Button.Activated:Connect(Dialog.Close)
 			Button.Activated:Connect(Callback)
 		end
 		function Dialog:Close()
-			CreateTween({Frame, "Size", UDim2.fromOffset(250 * 1.08, 150 * 1.08), 0.2})
-			CreateTween({Screen, "Transparency", 1, 0.15})
-			CreateTween({Frame, "Transparency", 1, 0.15, true})
+			CreateTween({ Frame, "Size", UDim2.fromOffset(250 * 1.08, 150 * 1.08), 0.2 })
+			CreateTween({ Screen, "Transparency", 1, 0.15 })
+			CreateTween({ Frame, "Transparency", 1, 0.15, true })
 			Screen:Destroy()
 		end
 		table.foreach(DOptions, function(_, Button)
@@ -870,63 +950,78 @@ function MythicLib:MakeWindow(Configs)
 		end
 
 		local TabSelect = Make("Button", MainScroll, {
-			Size = UDim2.new(1, 0, 0, 24)
+			Size = UDim2.new(1, 0, 0, 24),
 		})
 		Make("Corner", TabSelect)
 
-		local LabelTitle = InsertTheme(Create("TextLabel", TabSelect, {
-			Size = UDim2.new(1, TIcon and -25 or -15, 1),
-			Position = UDim2.fromOffset(TIcon and 25 or 15),
-			BackgroundTransparency = 1,
-			Font = Enum.Font.GothamMedium,
-			Text = TName,
-			TextColor3 = Theme["Color Text"],
-			TextSize = 10,
-			TextXAlignment = Enum.TextXAlignment.Left,
-			TextTransparency = (FirstTab and 0.3) or 0,
-			TextTruncate = "AtEnd"
-		}), "Text")
+		local LabelTitle = InsertTheme(
+			Create("TextLabel", TabSelect, {
+				Size = UDim2.new(1, TIcon and -25 or -15, 1),
+				Position = UDim2.fromOffset(TIcon and 25 or 15),
+				BackgroundTransparency = 1,
+				Font = Enum.Font.GothamMedium,
+				Text = TName,
+				TextColor3 = Theme["Color Text"],
+				TextSize = 10,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				TextTransparency = (FirstTab and 0.3) or 0,
+				TextTruncate = "AtEnd",
+			}),
+			"Text"
+		)
 
-		local LabelIcon = InsertTheme(Create("ImageLabel", TabSelect, {
-			Position = UDim2.new(0, 8, 0.5),
-			Size = UDim2.new(0, 13, 0, 13),
-			AnchorPoint = Vector2.new(0, 0.5),
-			Image = TIcon or "",
-			BackgroundTransparency = 1,
-			ImageTransparency = (FirstTab and 0.3) or 0
-		}), "Text")
+		local LabelIcon = InsertTheme(
+			Create("ImageLabel", TabSelect, {
+				Position = UDim2.new(0, 8, 0.5),
+				Size = UDim2.new(0, 13, 0, 13),
+				AnchorPoint = Vector2.new(0, 0.5),
+				Image = TIcon or "",
+				BackgroundTransparency = 1,
+				ImageTransparency = (FirstTab and 0.3) or 0,
+			}),
+			"Text"
+		)
 
-		local Selected = InsertTheme(Create("Frame", TabSelect, {
-			Size = FirstTab and UDim2.new(0, 4, 0, 4) or UDim2.new(0, 4, 0, 13),
-			Position = UDim2.new(0, 1, 0.5),
-			AnchorPoint = Vector2.new(0, 0.5),
-			BackgroundColor3 = Theme["Color Theme"],
-			BackgroundTransparency = FirstTab and 1 or 0
-		}), "Theme")
+		local Selected = InsertTheme(
+			Create("Frame", TabSelect, {
+				Size = FirstTab and UDim2.new(0, 4, 0, 4) or UDim2.new(0, 4, 0, 13),
+				Position = UDim2.new(0, 1, 0.5),
+				AnchorPoint = Vector2.new(0, 0.5),
+				BackgroundColor3 = Theme["Color Theme"],
+				BackgroundTransparency = FirstTab and 1 or 0,
+			}),
+			"Theme"
+		)
 		Make("Corner", Selected, UDim.new(0.5, 0))
 
-		local Container = InsertTheme(Create("ScrollingFrame", Containers, {
-			Size = UDim2.new(1, 0, 1, 0),
-			Position = UDim2.new(0, 0, 1),
-			AnchorPoint = Vector2.new(0, 1),
-			ScrollBarThickness = 1.5,
-			BackgroundTransparency = 1,
-			ScrollBarImageTransparency = 0.2,
-			ScrollBarImageColor3 = Theme["Color Theme"],
-			AutomaticCanvasSize = "Y",
-			ScrollingDirection = "Y",
-			BorderSizePixel = 0,
-			CanvasSize = UDim2.new(),
-			Visible = not FirstTab,
-			Name = "Container"
-		}, {Create("UIPadding", {
-			PaddingLeft = UDim.new(0, 10),
-			PaddingRight = UDim.new(0, 10),
-			PaddingTop = UDim.new(0, 10),
-			PaddingBottom = UDim.new(0, 10)
-		}), Create("UIListLayout", {
-			Padding = UDim.new(0, 5)
-		})}), "ScrollBar")
+		local Container = InsertTheme(
+			Create("ScrollingFrame", Containers, {
+				Size = UDim2.new(1, 0, 1, 0),
+				Position = UDim2.new(0, 0, 1),
+				AnchorPoint = Vector2.new(0, 1),
+				ScrollBarThickness = 1.5,
+				BackgroundTransparency = 1,
+				ScrollBarImageTransparency = 0.2,
+				ScrollBarImageColor3 = Theme["Color Theme"],
+				AutomaticCanvasSize = "Y",
+				ScrollingDirection = "Y",
+				BorderSizePixel = 0,
+				CanvasSize = UDim2.new(),
+				Visible = not FirstTab,
+				Name = "Container",
+			}, {
+				Create("UIPadding", {
+					PaddingLeft = UDim.new(0, 10),
+					PaddingRight = UDim.new(0, 10),
+					PaddingTop = UDim.new(0, 10),
+					PaddingBottom = UDim.new(0, 10),
+				}),
+				Create("UIListLayout", {
+					Padding = UDim.new(0, 5),
+				}),
+			}),
+			"ScrollBar"
+		)
 
 		local function Tabs()
 			if Container.Visible then
@@ -944,32 +1039,25 @@ function MythicLib:MakeWindow(Configs)
 					Tab.func:Disable()
 				end
 			end)
-			CreateTween({Container, "Size", UDim2.new(1, 0, 1, 0), 0.3})
-			CreateTween({LabelTitle, "TextTransparency", 0, 0.35})
-			CreateTween({LabelIcon, "ImageTransparency", 0, 0.35})
-			CreateTween({Selected, "Size", UDim2.new(0, 4, 0, 13), 0.35})
-			CreateTween({Selected, "BackgroundTransparency", 0, 0.35})
+			CreateTween({ Container, "Size", UDim2.new(1, 0, 1, 0), 0.3 })
+			CreateTween({ LabelTitle, "TextTransparency", 0, 0.35 })
+			CreateTween({ LabelIcon, "ImageTransparency", 0, 0.35 })
+			CreateTween({ Selected, "Size", UDim2.new(0, 4, 0, 13), 0.35 })
+			CreateTween({ Selected, "BackgroundTransparency", 0, 0.35 })
 		end
 		TabSelect.Activated:Connect(Tabs)
 
 		FirstTab = true
 		local Tab = {}
-		table.insert(MythicLib.Tabs, {
-			TabInfo = {
-				Name = TName,
-				Icon = TIcon
-			},
-			func = Tab,
-			Cont = Container
-		})
+		table.insert(MythicLib.Tabs, { TabInfo = { Name = TName, Icon = TIcon }, func = Tab, Cont = Container })
 		Tab.Cont = Container
 
 		function Tab:Disable()
 			Container.Visible = false
-			CreateTween({LabelTitle, "TextTransparency", 0.3, 0.35})
-			CreateTween({LabelIcon, "ImageTransparency", 0.3, 0.35})
-			CreateTween({Selected, "Size", UDim2.new(0, 4, 0, 4), 0.35})
-			CreateTween({Selected, "BackgroundTransparency", 1, 0.35})
+			CreateTween({ LabelTitle, "TextTransparency", 0.3, 0.35 })
+			CreateTween({ LabelIcon, "ImageTransparency", 0.3, 0.35 })
+			CreateTween({ Selected, "Size", UDim2.new(0, 4, 0, 4), 0.35 })
+			CreateTween({ Selected, "BackgroundTransparency", 1, 0.35 })
 		end
 		function Tab:Enable()
 			Tabs()
@@ -989,32 +1077,35 @@ function MythicLib:MakeWindow(Configs)
 		end
 
 		function Tab:AddSection(Configs)
-			local SectionName = type(Configs) == "string" and Configs or Configs[1] or Configs.Name or Configs.Title or Configs.Section
+			local SectionName = type(Configs) == "string" and Configs
+				or Configs[1]
+				or Configs.Name
+				or Configs.Title
+				or Configs.Section
 
 			local SectionFrame = Create("Frame", Container, {
 				Size = UDim2.new(1, 0, 0, 20),
 				BackgroundTransparency = 1,
-				Name = "Option"
+				Name = "Option",
 			})
 
-			local SectionLabel = InsertTheme(Create("TextLabel", SectionFrame, {
-				Font = Enum.Font.GothamBold,
-				Text = SectionName,
-				TextColor3 = Theme["Color Text"],
-				Size = UDim2.new(1, -25, 1, 0),
-				Position = UDim2.new(0, 5),
-				BackgroundTransparency = 1,
-				TextTruncate = "AtEnd",
-				TextSize = 14,
-				TextXAlignment = "Left"
-			}), "Text")
+			local SectionLabel = InsertTheme(
+				Create("TextLabel", SectionFrame, {
+					Font = Enum.Font.GothamBold,
+					Text = SectionName,
+					TextColor3 = Theme["Color Text"],
+					Size = UDim2.new(1, -25, 1, 0),
+					Position = UDim2.new(0, 5),
+					BackgroundTransparency = 1,
+					TextTruncate = "AtEnd",
+					TextSize = 14,
+					TextXAlignment = "Left",
+				}),
+				"Text"
+			)
 
 			local Section = {}
-			table.insert(MythicLib.Options, {
-				type = "Section",
-				Name = SectionName,
-				func = Section
-			})
+			table.insert(MythicLib.Options, { type = "Section", Name = SectionName, func = Section })
 			function Section:Visible(Bool)
 				if Bool == nil then
 					SectionFrame.Visible = not SectionFrame.Visible
@@ -1069,8 +1160,7 @@ function MythicLib:MakeWindow(Configs)
 		function Tab:AddButton(Configs)
 			local BName = Configs[1] or Configs.Name or Configs.Title or "Button!"
 			local BDescription = Configs.Desc or Configs.Description or ""
-			local Callback = Configs[2] or Configs.Callback or function()
-			end
+			local Callback = Configs[2] or Configs.Callback or function() end
 			local MultCallback = {}
 
 			local Button, LabelFunc = ButtonFrame(Container, BName, BDescription, UDim2.new(1, -20))
@@ -1080,7 +1170,7 @@ function MythicLib:MakeWindow(Configs)
 				Position = UDim2.new(1, -10, 0.5),
 				AnchorPoint = Vector2.new(1, 0.5),
 				BackgroundTransparency = 1,
-				Image = "rbxassetid://10709791437"
+				Image = "rbxassetid://10709791437",
 			})
 
 			Button.Activated:Connect(function()
@@ -1093,11 +1183,7 @@ function MythicLib:MakeWindow(Configs)
 			end)
 
 			local Button = {}
-			table.insert(MythicLib.Options, {
-				type = "Button",
-				Name = BName,
-				func = Button
-			})
+			table.insert(MythicLib.Options, { type = "Button", Name = BName, func = Button })
 			function Button:Callback(func)
 				table.insert(MultCallback, func)
 			end
@@ -1127,37 +1213,42 @@ function MythicLib:MakeWindow(Configs)
 			local TName = Configs[1] or Configs.Name or Configs.Title or "Toggle"
 			local TDesc = Configs.Desc or Configs.Description or ""
 			local Default = Configs[2] or Configs.Default or false
-			local Callback = Configs[3] or Configs.Callback or function()
-			end
+			local Callback = Configs[3] or Configs.Callback or function() end
 			local Flag = Configs[4] or Configs.Flag or false
 			local MultCallback = {}
 
 			local Button, LabelFunc = ButtonFrame(Container, TName, TDesc, UDim2.new(1, -38))
 
-			local ToggleHolder = InsertTheme(Create("Frame", Button, {
-				Size = UDim2.new(0, 35, 0, 18),
-				Position = UDim2.new(1, -10, 0.5),
-				AnchorPoint = Vector2.new(1, 0.5),
-				BackgroundColor3 = Theme["Color Stroke"]
-			}), "Stroke")
+			local ToggleHolder = InsertTheme(
+				Create("Frame", Button, {
+					Size = UDim2.new(0, 35, 0, 18),
+					Position = UDim2.new(1, -10, 0.5),
+					AnchorPoint = Vector2.new(1, 0.5),
+					BackgroundColor3 = Theme["Color Stroke"],
+				}),
+				"Stroke"
+			)
 			Make("Corner", ToggleHolder, UDim.new(0.5, 0))
 
 			local Slider = Create("Frame", ToggleHolder, {
 				BackgroundTransparency = 1,
 				Size = UDim2.new(0.8, 0, 0.8, 0),
 				Position = UDim2.new(0.5, 0, 0.5, 0),
-				AnchorPoint = Vector2.new(0.5, 0.5)
+				AnchorPoint = Vector2.new(0.5, 0.5),
 			})
 
-			local Toggle = InsertTheme(Create("Frame", Slider, {
-				Size = UDim2.new(0, 12, 0, 12),
-				Position = UDim2.new(0, 0, 0.5),
-				AnchorPoint = Vector2.new(0, 0.5),
-				BackgroundColor3 = Theme["Color Theme"]
-			}), "Theme")
+			local Toggle = InsertTheme(
+				Create("Frame", Slider, {
+					Size = UDim2.new(0, 12, 0, 12),
+					Position = UDim2.new(0, 0, 0.5),
+					AnchorPoint = Vector2.new(0, 0.5),
+					BackgroundColor3 = Theme["Color Theme"],
+				}),
+				"Theme"
+			)
 			Make("Corner", Toggle, UDim.new(0.5, 0))
 
-			if Flag and type(Flag) == "string" and assert(Flags, Flag) then
+			if Flag and type(Flag) == "string" and rawget(Flags, Flag) then
 				Default = Flags[Flag]
 			end
 
@@ -1182,13 +1273,13 @@ function MythicLib:MakeWindow(Configs)
 				WaitClick, Default = true, Val
 				CallbackFunc()
 				if Default then
-					CreateTween({Toggle, "Position", UDim2.new(1, 0, 0.5), 0.25})
-					CreateTween({Toggle, "BackgroundTransparency", 0, 0.25})
-					CreateTween({Toggle, "AnchorPoint", Vector2.new(1, 0.5), 0.25, Wait or false})
+					CreateTween({ Toggle, "Position", UDim2.new(1, 0, 0.5), 0.25 })
+					CreateTween({ Toggle, "BackgroundTransparency", 0, 0.25 })
+					CreateTween({ Toggle, "AnchorPoint", Vector2.new(1, 0.5), 0.25, Wait or false })
 				else
-					CreateTween({Toggle, "Position", UDim2.new(0, 0, 0.5), 0.25})
-					CreateTween({Toggle, "BackgroundTransparency", 0.8, 0.25})
-					CreateTween({Toggle, "AnchorPoint", Vector2.new(0, 0.5), 0.25, Wait or false})
+					CreateTween({ Toggle, "Position", UDim2.new(0, 0, 0.5), 0.25 })
+					CreateTween({ Toggle, "BackgroundTransparency", 0.8, 0.25 })
+					CreateTween({ Toggle, "AnchorPoint", Vector2.new(0, 0.5), 0.25, Wait or false })
 				end
 				WaitClick = false
 			end
@@ -1199,11 +1290,7 @@ function MythicLib:MakeWindow(Configs)
 			end)
 
 			local Toggle = {}
-			table.insert(MythicLib.Options, {
-				type = "Toggle",
-				Name = TName,
-				func = Toggle
-			})
+			table.insert(MythicLib.Options, { type = "Toggle", Name = TName, func = Toggle })
 			function Toggle:Callback(func)
 				table.insert(MultCallback, func)
 				task.spawn(func, Default)
@@ -1242,42 +1329,47 @@ function MythicLib:MakeWindow(Configs)
 			local DDesc = Configs.Desc or Configs.Description or ""
 			local DOptions = Configs[2] or Configs.Options or {}
 			local DDefault = Configs[3] or Configs.Default or {}
-			local Callback = Configs[4] or Configs.Callback or function()
-			end
+			local Callback = Configs[4] or Configs.Callback or function() end
 			local Flag = Configs[5] or Configs.Flag or false
 			local MultCallback = {}
 
-			if Flag and type(Flag) == "string" and assert(Flags, Flag) then
+			if Flag and type(Flag) == "string" and rawget(Flags, Flag) then
 				DDefault = Flags[Flag]
 			end
 
 			local Button, LabelFunc = ButtonFrame(Container, DName, DDesc, UDim2.new(1, -180))
 
-			local SelectedFrame = InsertTheme(Create("Frame", Button, {
-				Size = UDim2.new(0, 150, 0, 18),
-				Position = UDim2.new(1, -10, 0.5),
-				AnchorPoint = Vector2.new(1, 0.5),
-				BackgroundColor3 = Theme["Color Stroke"]
-			}), "Stroke")
+			local SelectedFrame = InsertTheme(
+				Create("Frame", Button, {
+					Size = UDim2.new(0, 150, 0, 18),
+					Position = UDim2.new(1, -10, 0.5),
+					AnchorPoint = Vector2.new(1, 0.5),
+					BackgroundColor3 = Theme["Color Stroke"],
+				}),
+				"Stroke"
+			)
 			Make("Corner", SelectedFrame, UDim.new(0, 4))
 
-			local ActiveLabel = InsertTheme(Create("TextLabel", SelectedFrame, {
-				Size = UDim2.new(0.85, 0, 0.85, 0),
-				AnchorPoint = Vector2.new(0.5, 0.5),
-				Position = UDim2.new(0.5, 0, 0.5, 0),
-				BackgroundTransparency = 1,
-				Font = Enum.Font.GothamBold,
-				TextScaled = true,
-				TextColor3 = Theme["Color Text"],
-				Text = "..."
-			}), "Text")
+			local ActiveLabel = InsertTheme(
+				Create("TextLabel", SelectedFrame, {
+					Size = UDim2.new(0.85, 0, 0.85, 0),
+					AnchorPoint = Vector2.new(0.5, 0.5),
+					Position = UDim2.new(0.5, 0, 0.5, 0),
+					BackgroundTransparency = 1,
+					Font = Enum.Font.GothamBold,
+					TextScaled = true,
+					TextColor3 = Theme["Color Text"],
+					Text = "...",
+				}),
+				"Text"
+			)
 
 			local Arrow = Create("ImageLabel", SelectedFrame, {
 				Size = UDim2.new(0, 15, 0, 15),
 				Position = UDim2.new(0, -5, 0.5),
 				AnchorPoint = Vector2.new(1, 0.5),
 				Image = "rbxassetid://10709791523",
-				BackgroundTransparency = 1
+				BackgroundTransparency = 1,
 			})
 
 			local NoClickFrame = Create("TextButton", DropdownHolder, {
@@ -1285,7 +1377,7 @@ function MythicLib:MakeWindow(Configs)
 				Size = UDim2.new(1, 0, 1, 0),
 				BackgroundTransparency = 1,
 				Visible = false,
-				Text = ""
+				Text = "",
 			})
 
 			local DropFrame = Create("Frame", NoClickFrame, {
@@ -1295,39 +1387,43 @@ function MythicLib:MakeWindow(Configs)
 				AnchorPoint = Vector2.new(0, 1),
 				Name = "DropdownFrame",
 				ClipsDescendants = true,
-				Active = true
+				Active = true,
 			})
 			Make("Corner", DropFrame)
 			Make("Stroke", DropFrame)
-			Make("Gradient", DropFrame, {
-				Rotation = 60
-			})
+			Make("Gradient", DropFrame, { Rotation = 60 })
 
-			local ScrollFrame = InsertTheme(Create("ScrollingFrame", DropFrame, {
-				ScrollBarImageColor3 = Theme["Color Theme"],
-				Size = UDim2.new(1, 0, 1, 0),
-				ScrollBarThickness = 1.5,
-				BackgroundTransparency = 1,
-				BorderSizePixel = 0,
-				CanvasSize = UDim2.new(),
-				ScrollingDirection = "Y",
-				AutomaticCanvasSize = "Y",
-				Active = true
-			}, {Create("UIPadding", {
-				PaddingLeft = UDim.new(0, 8),
-				PaddingRight = UDim.new(0, 8),
-				PaddingTop = UDim.new(0, 5),
-				PaddingBottom = UDim.new(0, 5)
-			}), Create("UIListLayout", {
-				Padding = UDim.new(0, 4)
-			})}), "ScrollBar")
+			local ScrollFrame = InsertTheme(
+				Create("ScrollingFrame", DropFrame, {
+					ScrollBarImageColor3 = Theme["Color Theme"],
+					Size = UDim2.new(1, 0, 1, 0),
+					ScrollBarThickness = 1.5,
+					BackgroundTransparency = 1,
+					BorderSizePixel = 0,
+					CanvasSize = UDim2.new(),
+					ScrollingDirection = "Y",
+					AutomaticCanvasSize = "Y",
+					Active = true,
+				}, {
+					Create("UIPadding", {
+						PaddingLeft = UDim.new(0, 8),
+						PaddingRight = UDim.new(0, 8),
+						PaddingTop = UDim.new(0, 5),
+						PaddingBottom = UDim.new(0, 5),
+					}),
+					Create("UIListLayout", {
+						Padding = UDim.new(0, 4),
+					}),
+				}),
+				"ScrollBar"
+			)
 
 			local ScrollSize, WaitClick = 5
 			local function Disable()
 				WaitClick = true
-				CreateTween({Arrow, "Rotation", 0, 0.2})
-				CreateTween({DropFrame, "Size", UDim2.new(0, 152, 0, 0), 0.2, true})
-				CreateTween({Arrow, "ImageColor3", Color3.fromRGB(255, 255, 255), 0.2})
+				CreateTween({ Arrow, "Rotation", 0, 0.2 })
+				CreateTween({ DropFrame, "Size", UDim2.new(0, 152, 0, 0), 0.2, true })
+				CreateTween({ Arrow, "ImageColor3", Color3.fromRGB(255, 255, 255), 0.2 })
 				Arrow.Image = "rbxassetid://10709791523"
 				NoClickFrame.Visible = false
 				WaitClick = false
@@ -1347,7 +1443,7 @@ function MythicLib:MakeWindow(Configs)
 				ScrollSize = (math.clamp(Count, 0, 10) * 25) + 10
 				if NoClickFrame.Visible then
 					NoClickFrame.Visible = true
-					CreateTween({DropFrame, "Size", GetFrameSize(), 0.2, true})
+					CreateTween({ DropFrame, "Size", GetFrameSize(), 0.2, true })
 				end
 			end
 
@@ -1358,14 +1454,14 @@ function MythicLib:MakeWindow(Configs)
 				WaitClick = true
 				if NoClickFrame.Visible then
 					Arrow.Image = "rbxassetid://10709791523"
-					CreateTween({Arrow, "ImageColor3", Color3.fromRGB(255, 255, 255), 0.2})
-					CreateTween({DropFrame, "Size", UDim2.new(0, 152, 0, 0), 0.2, true})
+					CreateTween({ Arrow, "ImageColor3", Color3.fromRGB(255, 255, 255), 0.2 })
+					CreateTween({ DropFrame, "Size", UDim2.new(0, 152, 0, 0), 0.2, true })
 					NoClickFrame.Visible = false
 				else
 					NoClickFrame.Visible = true
 					Arrow.Image = "rbxassetid://10709790948"
-					CreateTween({Arrow, "ImageColor3", Theme["Color Theme"], 0.2})
-					CreateTween({DropFrame, "Size", GetFrameSize(), 0.2, true})
+					CreateTween({ Arrow, "ImageColor3", Theme["Color Theme"], 0.2 })
+					CreateTween({ DropFrame, "Size", GetFrameSize(), 0.2, true })
 				end
 				WaitClick = false
 			end
@@ -1379,10 +1475,10 @@ function MythicLib:MakeWindow(Configs)
 				local NewPos = UDim2.fromOffset(ClampX, ClampY)
 				local AnchorPoint = FramePos.Y > ScreenSize.Y / 1.4 and 1 or ScrollSize > 80 and 0.5 or 0
 				DropFrame.AnchorPoint = Vector2.new(0, AnchorPoint)
-				CreateTween({DropFrame, "Position", NewPos, 0.1})
+				CreateTween({ DropFrame, "Position", NewPos, 0.1 })
 			end
 
-			local Default = (type(DDefault) == "table" and DDefault) or {DDefault}
+			local Default = (type(DDefault) == "table" and DDefault) or { DDefault }
 			local Options, MultSelected, Selected = {}, Default, Default
 
 			local function VerifyOption(Option)
@@ -1403,29 +1499,35 @@ function MythicLib:MakeWindow(Configs)
 					Name = "Option",
 					Size = UDim2.new(1, 0, 0, 21),
 					Position = UDim2.new(0, 0, 0.5),
-					AnchorPoint = Vector2.new(0, 0.5)
+					AnchorPoint = Vector2.new(0, 0.5),
 				})
 				Make("Corner", Option, UDim.new(0, 4))
 
-				local SelectedFrame = InsertTheme(Create("Frame", Option, {
-					Position = UDim2.new(0, 1, 0.5),
-					Size = UDim2.new(0, 4, 0, 4),
-					BackgroundColor3 = Theme["Color Theme"],
-					BackgroundTransparency = 1,
-					AnchorPoint = Vector2.new(0, 0.5)
-				}), "Theme")
+				local SelectedFrame = InsertTheme(
+					Create("Frame", Option, {
+						Position = UDim2.new(0, 1, 0.5),
+						Size = UDim2.new(0, 4, 0, 4),
+						BackgroundColor3 = Theme["Color Theme"],
+						BackgroundTransparency = 1,
+						AnchorPoint = Vector2.new(0, 0.5),
+					}),
+					"Theme"
+				)
 				Make("Corner", SelectedFrame, UDim.new(0.5, 0))
 
-				local OptionLabel = InsertTheme(Create("TextLabel", Option, {
-					Size = UDim2.new(1, 0, 1),
-					Position = UDim2.new(0, 10),
-					Text = OptionName,
-					TextColor3 = Theme["Color Text"],
-					Font = Enum.Font.GothamBold,
-					TextXAlignment = "Left",
-					BackgroundTransparency = 1,
-					TextTransparency = 0.4
-				}), "Text")
+				local OptionLabel = InsertTheme(
+					Create("TextLabel", Option, {
+						Size = UDim2.new(1, 0, 1),
+						Position = UDim2.new(0, 10),
+						Text = OptionName,
+						TextColor3 = Theme["Color Text"],
+						Font = Enum.Font.GothamBold,
+						TextXAlignment = "Left",
+						BackgroundTransparency = 1,
+						TextTransparency = 0.4,
+					}),
+					"Text"
+				)
 
 				local function CallbackFunc()
 					if Flag and typeof(Flag) == "string" then
@@ -1454,15 +1556,15 @@ function MythicLib:MakeWindow(Configs)
 				local function Active()
 					for _, Val in pairs(Options) do
 						if Val.Button ~= Option then
-							CreateTween({Val.Label, "TextTransparency", 0.4, 0.35})
-							CreateTween({Val.Frame, "BackgroundTransparency", 1, 0.35})
-							CreateTween({Val.Frame, "Size", UDim2.fromOffset(4, 4), 0.35})
+							CreateTween({ Val.Label, "TextTransparency", 0.4, 0.35 })
+							CreateTween({ Val.Frame, "BackgroundTransparency", 1, 0.35 })
+							CreateTween({ Val.Frame, "Size", UDim2.fromOffset(4, 4), 0.35 })
 						end
 					end
-					CreateTween({OptionLabel, "TextTransparency", 0, 0.35})
-					CreateTween({SelectedFrame, "BackgroundTransparency", 0, 0.35})
-					CreateTween({SelectedFrame, "Size", UDim2.fromOffset(4, 14), 0.35})
-					Selected = {OptionName}
+					CreateTween({ OptionLabel, "TextTransparency", 0, 0.35 })
+					CreateTween({ SelectedFrame, "BackgroundTransparency", 0, 0.35 })
+					CreateTween({ SelectedFrame, "Size", UDim2.fromOffset(4, 14), 0.35 })
+					Selected = { OptionName }
 					ActiveLabel.Text = Selected[1]
 					CallbackFunc()
 				end
@@ -1481,7 +1583,7 @@ function MythicLib:MakeWindow(Configs)
 					Frame = SelectedFrame,
 					Name = OptionName,
 					Active = Active,
-					Disable = Disable
+					Disable = Disable,
 				})
 			end
 
@@ -1511,11 +1613,7 @@ function MythicLib:MakeWindow(Configs)
 			CalculateSize()
 
 			local Dropdown = {}
-			table.insert(MythicLib.Options, {
-				type = "Dropdown",
-				Name = DName,
-				func = Dropdown
-			})
+			table.insert(MythicLib.Options, { type = "Dropdown", Name = DName, func = Dropdown })
 			function Dropdown:Visible(Bool)
 				if Bool == nil then
 					Button.Visible = not Button.Visible
@@ -1527,7 +1625,7 @@ function MythicLib:MakeWindow(Configs)
 				Button:Destroy()
 			end
 			function Dropdown:Add(...)
-				local NewOptions = {...}
+				local NewOptions = { ... }
 				if type(NewOptions[1]) == "table" then
 					table.foreach(Option, function(_, Name)
 						AddOption(Name)
@@ -1588,13 +1686,12 @@ function MythicLib:MakeWindow(Configs)
 			local Max = Configs[3] or Configs.MaxValue or Configs.Max or 100
 			local Increase = Configs[4] or Configs.Increase or 1
 			local Default = Configs[5] or Configs.Default or 25
-			local Callback = Configs[6] or Configs.Callback or function()
-			end
+			local Callback = Configs[6] or Configs.Callback or function() end
 			local Flag = Configs[7] or Configs.Flag or false
 			local MultCallback = {}
 			Min, Max = Min / Increase, Max / Increase
 
-			if Flag and type(Flag) == "string" and assert(Flags, Flag) then
+			if Flag and type(Flag) == "string" and rawget(Flags, Flag) then
 				Default = Flags[Flag]
 			end
 
@@ -1606,22 +1703,28 @@ function MythicLib:MakeWindow(Configs)
 				AnchorPoint = Vector2.new(1, 0),
 				AutoButtonColor = false,
 				Text = "",
-				BackgroundTransparency = 1
+				BackgroundTransparency = 1,
 			})
 
-			local SliderBar = InsertTheme(Create("Frame", SliderHolder, {
-				BackgroundColor3 = Theme["Color Stroke"],
-				Size = UDim2.new(1, -20, 0, 6),
-				Position = UDim2.new(0.5, 0, 0.5),
-				AnchorPoint = Vector2.new(0.5, 0.5)
-			}), "Stroke")
+			local SliderBar = InsertTheme(
+				Create("Frame", SliderHolder, {
+					BackgroundColor3 = Theme["Color Stroke"],
+					Size = UDim2.new(1, -20, 0, 6),
+					Position = UDim2.new(0.5, 0, 0.5),
+					AnchorPoint = Vector2.new(0.5, 0.5),
+				}),
+				"Stroke"
+			)
 			Make("Corner", SliderBar)
 
-			local Indicator = InsertTheme(Create("Frame", SliderBar, {
-				BackgroundColor3 = Theme["Color Theme"],
-				Size = UDim2.fromScale(0.3, 1),
-				BorderSizePixel = 0
-			}), "Theme")
+			local Indicator = InsertTheme(
+				Create("Frame", SliderBar, {
+					BackgroundColor3 = Theme["Color Theme"],
+					Size = UDim2.fromScale(0.3, 1),
+					BorderSizePixel = 0,
+				}),
+				"Theme"
+			)
 			Make("Corner", Indicator)
 
 			local SliderIcon = Create("Frame", SliderBar, {
@@ -1629,25 +1732,28 @@ function MythicLib:MakeWindow(Configs)
 				BackgroundColor3 = Color3.fromRGB(220, 220, 220),
 				Position = UDim2.fromScale(0.3, 0.5),
 				AnchorPoint = Vector2.new(0.5, 0.5),
-				BackgroundTransparency = 0.2
+				BackgroundTransparency = 0.2,
 			})
 			Make("Corner", SliderIcon)
 
-			local LabelVal = InsertTheme(Create("TextLabel", SliderHolder, {
-				Size = UDim2.new(0, 14, 0, 14),
-				AnchorPoint = Vector2.new(1, 0.5),
-				Position = UDim2.new(0, 0, 0.5),
-				BackgroundTransparency = 1,
-				TextColor3 = Theme["Color Text"],
-				Font = Enum.Font.FredokaOne,
-				TextSize = 12
-			}), "Text")
+			local LabelVal = InsertTheme(
+				Create("TextLabel", SliderHolder, {
+					Size = UDim2.new(0, 14, 0, 14),
+					AnchorPoint = Vector2.new(1, 0.5),
+					Position = UDim2.new(0, 0, 0.5),
+					BackgroundTransparency = 1,
+					TextColor3 = Theme["Color Text"],
+					Font = Enum.Font.FredokaOne,
+					TextSize = 12,
+				}),
+				"Text"
+			)
 
 			local UIScale = Create("UIScale", LabelVal)
 
 			local BaseMousePos = Create("Frame", SliderBar, {
 				Position = UDim2.new(0, 0, 0.5, 0),
-				Visible = false
+				Visible = false,
 			})
 
 			local function SaveSlider()
@@ -1673,7 +1779,7 @@ function MythicLib:MakeWindow(Configs)
 			end
 
 			SliderHolder.MouseButton1Down:Connect(function()
-				CreateTween({SliderIcon, "Transparency", 0, 0.3})
+				CreateTween({ SliderIcon, "Transparency", 0, 0.3 })
 				Container.ScrollingEnabled = false
 				while UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) do
 					task.wait()
@@ -1684,17 +1790,17 @@ function MythicLib:MakeWindow(Configs)
 						task.spawn(func, Default)
 					end
 				end)
-				CreateTween({SliderIcon, "Transparency", 0.2, 0.3})
+				CreateTween({ SliderIcon, "Transparency", 0.2, 0.3 })
 				Container.ScrollingEnabled = true
 				SaveSlider()
 			end)
 
 			LabelVal:GetPropertyChangedSignal("Text"):Connect(function()
 				UIScale.Scale = 0.3
-				CreateTween({UIScale, "Scale", 1.2, 0.1})
-				CreateTween({LabelVal, "Rotation", math.random(-1, 1) * 5, 0.15, true})
-				CreateTween({UIScale, "Scale", 1, 0.2})
-				CreateTween({LabelVal, "Rotation", 0, 0.1})
+				CreateTween({ UIScale, "Scale", 1.2, 0.1 })
+				CreateTween({ LabelVal, "Rotation", math.random(-1, 1) * 5, 0.15, true })
+				CreateTween({ UIScale, "Scale", 1, 0.2 })
+				CreateTween({ LabelVal, "Rotation", 0, 0.1 })
 			end)
 
 			SliderIcon:GetPropertyChangedSignal("Position"):Connect(function()
@@ -1709,17 +1815,13 @@ function MythicLib:MakeWindow(Configs)
 
 				local SliderPos = (NewValue - Min) / (Max - Min)
 
-				CreateTween({SliderIcon, "Position", UDim2.fromScale(math.clamp(SliderPos, 0, 1), 0.5), 0.3, true})
+				CreateTween({ SliderIcon, "Position", UDim2.fromScale(math.clamp(SliderPos, 0, 1), 0.5), 0.3, true })
 				SaveSlider()
 			end
 			SetSlider(Default)
 
 			local Slider = {}
-			table.insert(MythicLib.Options, {
-				type = "Slider",
-				Name = SName,
-				func = Slider
-			})
+			table.insert(MythicLib.Options, { type = "Slider", Name = SName, func = Slider })
 			function Slider:Set(NewVal1, NewVal2)
 				if NewVal1 and NewVal2 then
 					LabelFunc:SetTitle(NewVal1)
@@ -1753,56 +1855,58 @@ function MythicLib:MakeWindow(Configs)
 			local TDefault = Configs[2] or Configs.Default or ""
 			local TPlaceholderText = Configs.PlaceholderText or "Input"
 			local TClearText = Configs[3] or Configs.ClearText or false
-			local Callback = Configs[4] or Configs.Callback or function()
-			end
+			local Callback = Configs[4] or Configs.Callback or function() end
 			local Flag = Configs[5] or Configs.Flag or false
 			local MultCallback = {}
-
-			if type(TDefault) ~= "string" or TDefault:gsub(" ", ""):len() < 1 then
-				TDefault = false
-			end
 
 			if Flag and type(Flag) == "string" and assert(Flags, Flag) then
 				TDefault = Flags[Flag]
 			end
 
+			--[[if type(TDefault) ~= "string" or TDefault:gsub(" ", ""):len() < 1 then
+				TDefault = false
+			end]]
+
 			local Button, LabelFunc = ButtonFrame(Container, TName, TDesc, UDim2.new(1, -38))
 
-			local SelectedFrame = InsertTheme(Create("Frame", Button, {
-				Size = UDim2.new(0, 150, 0, 18),
-				Position = UDim2.new(1, -10, 0.5),
-				AnchorPoint = Vector2.new(1, 0.5),
-				BackgroundColor3 = Theme["Color Stroke"]
-			}), "Stroke")
+			local SelectedFrame = InsertTheme(
+				Create("Frame", Button, {
+					Size = UDim2.new(0, 150, 0, 18),
+					Position = UDim2.new(1, -10, 0.5),
+					AnchorPoint = Vector2.new(1, 0.5),
+					BackgroundColor3 = Theme["Color Stroke"],
+				}),
+				"Stroke"
+			)
 			Make("Corner", SelectedFrame, UDim.new(0, 4))
 
-			local TextBoxInput = InsertTheme(Create("TextBox", SelectedFrame, {
-				Size = UDim2.new(0.85, 0, 0.85, 0),
-				AnchorPoint = Vector2.new(0.5, 0.5),
-				Position = UDim2.new(0.5, 0, 0.5, 0),
-				BackgroundTransparency = 1,
-				Font = Enum.Font.GothamBold,
-				TextScaled = true,
-				TextColor3 = Theme["Color Text"],
-				ClearTextOnFocus = TClearText,
-				Text = ""
-			}), "Text")
+			local TextBoxInput = InsertTheme(
+				Create("TextBox", SelectedFrame, {
+					Size = UDim2.new(0.85, 0, 0.85, 0),
+					AnchorPoint = Vector2.new(0.5, 0.5),
+					Position = UDim2.new(0.5, 0, 0.5, 0),
+					BackgroundTransparency = 1,
+					Font = Enum.Font.GothamBold,
+					TextScaled = true,
+					TextColor3 = Theme["Color Text"],
+					ClearTextOnFocus = TClearText,
+					Text = "",
+				}),
+				"Text"
+			)
 
 			local Pencil = Create("ImageLabel", SelectedFrame, {
 				Size = UDim2.new(0, 12, 0, 12),
 				Position = UDim2.new(0, -5, 0.5),
 				AnchorPoint = Vector2.new(1, 0.5),
 				Image = "rbxassetid://15637081879",
-				BackgroundTransparency = 1
+				BackgroundTransparency = 1,
 			})
 
 			local function Input()
 				local Text = TextBoxInput.Text
 				if Text:gsub(" ", ""):len() < 1 then
 					return
-				end
-				if Flag and typeof(Flag) == "string" then
-					SaveFile(Flag, Text)
 				end
 
 				task.spawn(Callback, Text)
@@ -1816,10 +1920,10 @@ function MythicLib:MakeWindow(Configs)
 			TextBoxInput.FocusLost:Connect(Input)
 
 			TextBoxInput.FocusLost:Connect(function()
-				CreateTween({Pencil, "ImageColor3", Color3.fromRGB(255, 255, 255), 0.2})
+				CreateTween({ Pencil, "ImageColor3", Color3.fromRGB(255, 255, 255), 0.2 })
 			end)
 			TextBoxInput.Focused:Connect(function()
-				CreateTween({Pencil, "ImageColor3", Theme["Color Theme"], 0.2})
+				CreateTween({ Pencil, "ImageColor3", Theme["Color Theme"], 0.2 })
 			end)
 
 			local TextBox = {}
@@ -1844,7 +1948,7 @@ function MythicLib:MakeWindow(Configs)
 			local InviteHolder = Create("Frame", Container, {
 				Size = UDim2.new(1, 0, 0, 80),
 				Name = "Option",
-				BackgroundTransparency = 1
+				BackgroundTransparency = 1,
 			})
 
 			local InviteLabel = Create("TextLabel", InviteHolder, {
@@ -1855,49 +1959,58 @@ function MythicLib:MakeWindow(Configs)
 				TextXAlignment = "Left",
 				BackgroundTransparency = 1,
 				TextSize = 10,
-				Text = Invite
+				Text = Invite,
 			})
 
-			local FrameHolder = InsertTheme(Create("Frame", InviteHolder, {
-				Size = UDim2.new(1, 0, 0, 65),
-				AnchorPoint = Vector2.new(0, 1),
-				Position = UDim2.new(0, 0, 1),
-				BackgroundColor3 = Theme["Color Hub 2"]
-			}), "Frame")
+			local FrameHolder = InsertTheme(
+				Create("Frame", InviteHolder, {
+					Size = UDim2.new(1, 0, 0, 65),
+					AnchorPoint = Vector2.new(0, 1),
+					Position = UDim2.new(0, 0, 1),
+					BackgroundColor3 = Theme["Color Hub 2"],
+				}),
+				"Frame"
+			)
 			Make("Corner", FrameHolder)
 
 			local ImageLabel = Create("ImageLabel", FrameHolder, {
 				Size = UDim2.new(0, 30, 0, 30),
 				Position = UDim2.new(0, 7, 0, 7),
 				Image = Logo,
-				BackgroundTransparency = 1
+				BackgroundTransparency = 1,
 			})
 			Make("Corner", ImageLabel, UDim.new(0, 4))
 			Make("Stroke", ImageLabel)
 
-			local LTitle = InsertTheme(Create("TextLabel", FrameHolder, {
-				Size = UDim2.new(1, -52, 0, 15),
-				Position = UDim2.new(0, 44, 0, 7),
-				Font = Enum.Font.GothamBold,
-				TextColor3 = Theme["Color Text"],
-				TextXAlignment = "Left",
-				BackgroundTransparency = 1,
-				TextSize = 10,
-				Text = Title
-			}), "Text")
+			local LTitle = InsertTheme(
+				Create("TextLabel", FrameHolder, {
+					Size = UDim2.new(1, -52, 0, 15),
+					Position = UDim2.new(0, 44, 0, 7),
+					Font = Enum.Font.GothamBold,
+					TextColor3 = Theme["Color Text"],
+					TextXAlignment = "Left",
+					BackgroundTransparency = 1,
+					TextSize = 10,
+					Text = Title,
+				}),
+				"Text"
+			)
 
-			local LDesc = InsertTheme(Create("TextLabel", FrameHolder, {
-				Size = UDim2.new(1, -52, 0, 0),
-				Position = UDim2.new(0, 44, 0, 22),
-				TextWrapped = "Y",
-				AutomaticSize = "Y",
-				Font = Enum.Font.Gotham,
-				TextColor3 = Theme["Color Dark Text"],
-				TextXAlignment = "Left",
-				BackgroundTransparency = 1,
-				TextSize = 8,
-				Text = Desc
-			}), "DarkText")
+			local LDesc = InsertTheme(
+				Create("TextLabel", FrameHolder, {
+					Size = UDim2.new(1, -52, 0, 0),
+					Position = UDim2.new(0, 44, 0, 22),
+					TextWrapped = "Y",
+					AutomaticSize = "Y",
+					Font = Enum.Font.Gotham,
+					TextColor3 = Theme["Color Dark Text"],
+					TextXAlignment = "Left",
+					BackgroundTransparency = 1,
+					TextSize = 8,
+					Text = Desc,
+				}),
+				"DarkText"
+			)
 
 			local JoinButton = Create("TextButton", FrameHolder, {
 				Size = UDim2.new(1, -14, 0, 16),
@@ -1907,7 +2020,7 @@ function MythicLib:MakeWindow(Configs)
 				Font = Enum.Font.GothamBold,
 				TextSize = 12,
 				TextColor3 = Color3.fromRGB(220, 220, 220),
-				BackgroundColor3 = Color3.fromRGB(50, 150, 50)
+				BackgroundColor3 = Color3.fromRGB(50, 150, 50),
 			})
 			Make("Corner", JoinButton, UDim.new(0, 5))
 
@@ -1920,15 +2033,15 @@ function MythicLib:MakeWindow(Configs)
 
 				ClickDelay = true
 				SetProps(JoinButton, {
-					Text = "Link Copiado para Área de Transferência",
+					Text = "Link Copiado!",
 					BackgroundColor3 = Color3.fromRGB(100, 100, 100),
-					TextColor3 = Color3.fromRGB(150, 150, 150)
+					TextColor3 = Color3.fromRGB(150, 150, 150),
 				})
 				task.wait(5)
 				SetProps(JoinButton, {
 					Text = "Juntar-se",
 					BackgroundColor3 = Color3.fromRGB(50, 150, 50),
-					TextColor3 = Color3.fromRGB(220, 220, 220)
+					TextColor3 = Color3.fromRGB(220, 220, 220),
 				})
 				ClickDelay = false
 			end)
