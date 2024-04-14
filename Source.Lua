@@ -734,8 +734,8 @@ function MythicLib:MakeWindow(Configs)
 	local Window, FirstTab = {}, false
 	function Window:CloseBtn()
 		local Dialog = Window:Dialog({
-			Title = "Close",
-			Text = "Are you sure you want to close this script??",
+			Title = "Hmm...",
+			Text = "Certeza que Quer Apagar a Interface do Script?",
 			Options = {
 				{
 					"Confirm",
