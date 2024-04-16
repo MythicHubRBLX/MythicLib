@@ -526,10 +526,6 @@ function MythicLib:MakeWindow(Configs)
 	local SaveRejoin = Configs[4] or Configs.SaveRejoin or false
 	local Flags = MythicLib.Flags
 
-	if SaveCfg and type(SaveCfg) == "string" then
-		SaveCfg = string.gsub(SaveCfg, "/", "|")
-	end
-
 	local LastTick = tick()
 	local function SaveFile(Name, Value)
 		if writefile then
@@ -734,8 +730,8 @@ function MythicLib:MakeWindow(Configs)
 	local Window, FirstTab = {}, false
 	function Window:CloseBtn()
 		local Dialog = Window:Dialog({
-			Title = "Hmm...",
-			Text = "Certeza que Quer Apagar a Interface do Script?",
+			Title = "Close",
+			Text = "Are you sure you want to close this script??",
 			Options = {
 				{
 					"Confirm",
